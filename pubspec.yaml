@@ -1,4 +1,4 @@
-name: flutter_survey_js_workspace
+name: flutter_survey_js
 
 environment:
   sdk: ">=2.15.0 <4.0.0"
