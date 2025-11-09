@@ -100,18 +100,18 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
       ...choices
           .map(
             (e) => DropdownMenuItem(
+              alignment: AlignmentDirectional.centerEnd,
               value: e.value?.value,
               child: Text(
                 e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
                 style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.left,
-                textDirection: TextDirection.ltr,
               ),
             ),
           )
           .toList(growable: false),
       if (widget.dropdown.showNoneItem == true)
         DropdownMenuItem(
+            alignment: AlignmentDirectional.centerEnd,
             value: noneValue,
             child: Text(
               e.noneText?.getLocalizedText(context) ??
@@ -120,6 +120,7 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
             )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
+            alignment: AlignmentDirectional.centerEnd,
             value: selectbaseController.storeOtherAsComment
                 ? otherValue
                 : selectbaseController.otherValue,
