@@ -165,40 +165,47 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
             getCurrentControl().value = otherValue;
           }
         },
-        child: ReactiveDropdownField<dynamic>(
-              formControlName: e.name!,
-              hint: Text(e.placeholder?.getLocalizedText(context) ??
-                  S.of(context).placeholder,
-                textAlign: TextAlign.right,),
-              onChanged: (control) {
-                if (widget.dropdown.showOtherItem ?? false) {
-                  if (selectbaseController.storeOtherAsComment) {
-                    selectbaseController.setShowOther(control.value == otherValue);
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            dropdownMenuTheme: const DropdownMenuThemeData(
+              menuStyle: MenuStyle(alignment: Alignment.centerRight),
+            ),
+          ),
+          child: ReactiveDropdownField<dynamic>(
+                formControlName: e.name!,
+                hint: Text(e.placeholder?.getLocalizedText(context) ??
+                    S.of(context).placeholder,
+                  textAlign: TextAlign.right,),
+                onChanged: (control) {
+                  if (widget.dropdown.showOtherItem ?? false) {
+                    if (selectbaseController.storeOtherAsComment) {
+                      selectbaseController.setShowOther(control.value == otherValue);
+                    } else {
+                      selectbaseController.setShowOther(isOtherValue(control.value));
+                    }
                   } else {
-                    selectbaseController.setShowOther(isOtherValue(control.value));
-                  }
-                } else {
-                  selectbaseController.setShowOther(false);
-                }
-                if (widget.dropdown.showNoneItem ?? false) {
-                  if (control.value == noneValue) {
                     selectbaseController.setShowOther(false);
                   }
-                }
-              },
-            items: dropdownItems.map((item) {
-              return DropdownMenuItem<dynamic>(
-                value: item.value,
-                child: Align(
-                  alignment: Alignment.centerRight,       // Align text to right
-                  child: Text(
-                    (item.child as Text).data ?? '',
-                    style: (item.child as Text).style,
-                    textAlign: TextAlign.right,
+                  if (widget.dropdown.showNoneItem ?? false) {
+                    if (control.value == noneValue) {
+                      selectbaseController.setShowOther(false);
+                    }
+                  }
+                },
+              items: dropdownItems.map((item) {
+                return DropdownMenuItem<dynamic>(
+                  value: item.value,
+                  child: Align(
+                    alignment: Alignment.centerRight,       // Align text to right
+                    child: Text(
+                      (item.child as Text).data ?? '',
+                      style: (item.child as Text).style,
+                      textAlign: TextAlign.right,
+                    ),
                   ),
-                ),
-              );
-            }).toList(),),
+                );
+              }).toList(),),
+        ),
       ),
     );
   }
