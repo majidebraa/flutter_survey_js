@@ -101,14 +101,11 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           .map(
             (e) => DropdownMenuItem(
               value: e.value?.value,
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(
-                  e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.right,
-                  textDirection: TextDirection.rtl,
-                ),
+              child: Text(
+                e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.left,
+                textDirection: TextDirection.ltr,
               ),
             ),
           )
