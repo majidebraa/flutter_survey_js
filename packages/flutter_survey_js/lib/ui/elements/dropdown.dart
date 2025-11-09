@@ -104,6 +104,8 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               child: Text(
                 e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
                 style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.right,          // align text to right
+                textDirection: TextDirection.rtl,    // force RTL
               ),
             ),
           )
@@ -115,6 +117,8 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               e.noneText?.getLocalizedText(context) ??
                   S.of(context).noneItemText,
               style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.right,          // align text to right
+              textDirection: TextDirection.rtl,    // force RTL
             )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
@@ -125,6 +129,8 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               e.otherText?.getLocalizedText(context) ??
                   S.of(context).otherItemText,
               style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.right,          // align text to right
+              textDirection: TextDirection.rtl,    // force RTL
             )),
     ];
     return SelectbaseWidget(
