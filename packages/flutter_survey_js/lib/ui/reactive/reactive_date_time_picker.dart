@@ -3,8 +3,8 @@ import 'package:flutter_survey_js/flutter_survey_js.dart'
     hide Text, TextInputType;
 
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:reactive_forms/reactive_forms.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 enum ReactiveDatePickerFieldType {
   date,
@@ -284,4 +284,47 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
 
     return TimeOfDay.now();
   }
+
+
+
+
+}
+Future<Jalali?> showPersianDatePicker({
+  required BuildContext context,
+  required Jalali initialDate,
+  required Jalali firstDate,
+  required Jalali lastDate,
+}) {
+  Jalali selectedDate = initialDate;
+
+  return showDialog<Jalali>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('انتخاب تاریخ'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: Column(
+            children: [
+              Expanded(
+                child: CalendarDatePicker(
+                  firstDate: firstDate.toDateTime(),
+                  lastDate: lastDate.toDateTime(),
+                  initialDate: initialDate.toDateTime(),
+                  onDateChanged: (date) {
+                    selectedDate = Jalali.fromDateTime(date);
+                  },
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(selectedDate),
+                child: const Text('تایید'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
