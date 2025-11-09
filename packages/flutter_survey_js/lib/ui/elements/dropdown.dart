@@ -1,5 +1,4 @@
 import 'package:built_value/json_object.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/ui/elements/selectbase.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
@@ -94,141 +93,70 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
-    final e = widget.dropdown;
-    final control = getCurrentControl(); // reactive_forms control
+    var e = widget.dropdown;
 
-    // Build items as strings and widgets
-    final items = choices.map((choice) {
-      final label = choice.text?.getLocalizedText(context) ??
-          choice.value?.toString() ??
-          '';
-      return DropdownMenuItem<dynamic>(
-        value: choice.value?.value,
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              label,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodyMedium,
+    final dropdownItems = <DropdownMenuItem<dynamic>>[
+      ...choices
+          .map(
+            (e) => DropdownMenuItem(
+              value: e.value?.value,
+              child: Text(
+                e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
-          ),
-        ),
-      );
-    }).toList();
-
-    // None and Other items
-    if (widget.dropdown.showNoneItem == true) {
-      items.add(DropdownMenuItem<dynamic>(
-        value: noneValue,
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
+          )
+          .toList(growable: false),
+      if (widget.dropdown.showNoneItem == true)
+        DropdownMenuItem(
+            value: noneValue,
             child: Text(
-              e.noneText?.getLocalizedText(context) ?? S.of(context).noneItemText,
-              textAlign: TextAlign.right,
+              e.noneText?.getLocalizedText(context) ??
+                  S.of(context).noneItemText,
               style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ),
-      ));
-    }
-    if (widget.dropdown.showOtherItem == true) {
-      items.add(DropdownMenuItem<dynamic>(
-        value: selectbaseController.storeOtherAsComment ? otherValue : selectbaseController.otherValue,
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
+            )),
+      if (widget.dropdown.showOtherItem == true)
+        DropdownMenuItem(
+            value: selectbaseController.storeOtherAsComment
+                ? otherValue
+                : selectbaseController.otherValue,
             child: Text(
-              e.otherText?.getLocalizedText(context) ?? S.of(context).otherItemText,
-              textAlign: TextAlign.right,
+              e.otherText?.getLocalizedText(context) ??
+                  S.of(context).otherItemText,
               style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ),
-      ));
-    }
-
-    // Wrap in Directionality so hint & selected value appear RTL too
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: SelectbaseWidget(
-        controller: selectbaseController,
-        otherValueChanged: (value) {
-          if (!selectbaseController.storeOtherAsComment) {
-            control.value = value;
-          } else {
-            control.value = otherValue;
-          }
-        },
-        child: DropdownButtonHideUnderline(
-          child: StreamBuilder<Object?>(
-            // listen to control.value changes so UI updates when value changes
-            stream: control.valueChanges,
-            initialData: control.value,
-            builder: (context, snapshot) {
-              final currentValue = snapshot.data;
-
-              return DropdownButton2<dynamic>(
-                isExpanded: true,
-                items: items,
-                value: currentValue,
-                onChanged: (val) {
-                  // update reactive_forms control
-                  control.value = val;
-                  // handle showOther logic
-                  if (widget.dropdown.showOtherItem ?? false) {
-                    if (selectbaseController.storeOtherAsComment) {
-                      selectbaseController.setShowOther(val == otherValue);
-                    } else {
-                      selectbaseController.setShowOther(isOtherValue(val));
-                    }
-                  } else {
-                    selectbaseController.setShowOther(false);
-                  }
-                  if (widget.dropdown.showNoneItem ?? false && val == noneValue) {
-                    selectbaseController.setShowOther(false);
-                  }
-                },
-
-                // BUTTON appearance (selected value)
-                buttonHeight: 48,
-                buttonPadding: const EdgeInsets.symmetric(horizontal: 12),
-                // show arrow on left for RTL
-                icon: const Icon(Icons.arrow_drop_down),
-                iconSize: 24,
-                // Align button content (selected text) to the right
-                buttonDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.transparent),
-                ),
-
-                // DROPDOWN (overlay) appearance
-                dropdownDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  color: Theme.of(context).cardColor,
-                ),
-                // Force alignment of the menu to the right side of the button
-                alignment: Alignment.centerRight,
-                // Optional: control dropdown width if needed:
-                // dropdownWidth: MediaQuery.of(context).size.width * 0.8,
-                // Optional: item height if items are taller
-                itemHeight: 48,
-                // Optional: max height
-                dropdownMaxHeight: 300,
-                // match the menu direction visually
-                // (dropdown_button2 does not expose "direction", but alignment + iconOnLeft + Directionality works)
-              );
-            },
-          ),
-        ),
-      ),
+            )),
+    ];
+    return SelectbaseWidget(
+      controller: selectbaseController,
+      otherValueChanged: (value) {
+        if (!selectbaseController.storeOtherAsComment) {
+          getCurrentControl().value = value;
+        } else {
+          getCurrentControl().value = otherValue;
+        }
+      },
+      child: ReactiveDropdownField<dynamic>(
+          formControlName: e.name!,
+          hint: Text(e.placeholder?.getLocalizedText(context) ??
+              S.of(context).placeholder),
+          onChanged: (control) {
+            if (widget.dropdown.showOtherItem ?? false) {
+              if (selectbaseController.storeOtherAsComment) {
+                selectbaseController.setShowOther(control.value == otherValue);
+              } else {
+                selectbaseController.setShowOther(isOtherValue(control.value));
+              }
+            } else {
+              selectbaseController.setShowOther(false);
+            }
+            if (widget.dropdown.showNoneItem ?? false) {
+              if (control.value == noneValue) {
+                selectbaseController.setShowOther(false);
+              }
+            }
+          },
+          items: dropdownItems),
     );
   }
-
 }
