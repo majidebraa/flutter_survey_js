@@ -101,12 +101,9 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           .map(
             (e) => DropdownMenuItem(
               value: e.value?.value,
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Text(
-                  e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+              child: Text(
+                e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
           )
@@ -114,26 +111,20 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
       if (widget.dropdown.showNoneItem == true)
         DropdownMenuItem(
             value: noneValue,
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Text(
-                e.noneText?.getLocalizedText(context) ??
-                    S.of(context).noneItemText,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            child: Text(
+              e.noneText?.getLocalizedText(context) ??
+                  S.of(context).noneItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
             )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
             value: selectbaseController.storeOtherAsComment
                 ? otherValue
                 : selectbaseController.otherValue,
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Text(
-                e.otherText?.getLocalizedText(context) ??
-                    S.of(context).otherItemText,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            child: Text(
+              e.otherText?.getLocalizedText(context) ??
+                  S.of(context).otherItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
             )),
     ];
     return SelectbaseWidget(
@@ -145,27 +136,30 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           getCurrentControl().value = otherValue;
         }
       },
-      child: ReactiveDropdownField<dynamic>(
-          formControlName: e.name!,
-          hint: Text(e.placeholder?.getLocalizedText(context) ??
-              S.of(context).placeholder),
-          onChanged: (control) {
-            if (widget.dropdown.showOtherItem ?? false) {
-              if (selectbaseController.storeOtherAsComment) {
-                selectbaseController.setShowOther(control.value == otherValue);
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: ReactiveDropdownField<dynamic>(
+            formControlName: e.name!,
+            hint: Text(e.placeholder?.getLocalizedText(context) ??
+                S.of(context).placeholder),
+            onChanged: (control) {
+              if (widget.dropdown.showOtherItem ?? false) {
+                if (selectbaseController.storeOtherAsComment) {
+                  selectbaseController.setShowOther(control.value == otherValue);
+                } else {
+                  selectbaseController.setShowOther(isOtherValue(control.value));
+                }
               } else {
-                selectbaseController.setShowOther(isOtherValue(control.value));
-              }
-            } else {
-              selectbaseController.setShowOther(false);
-            }
-            if (widget.dropdown.showNoneItem ?? false) {
-              if (control.value == noneValue) {
                 selectbaseController.setShowOther(false);
               }
-            }
-          },
-          items: dropdownItems),
+              if (widget.dropdown.showNoneItem ?? false) {
+                if (control.value == noneValue) {
+                  selectbaseController.setShowOther(false);
+                }
+              }
+            },
+            items: dropdownItems),
+      ),
     );
   }
 }
