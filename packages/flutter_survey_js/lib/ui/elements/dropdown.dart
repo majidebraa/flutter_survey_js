@@ -104,6 +104,8 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               child: Text(
                 e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
                 style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
               ),
             ),
           )
