@@ -38,6 +38,7 @@ dependencies:
   path: ^1.8.3
   async: ^2.11.0
   collection: ^1.17.1
+  dropdown_button2: ^1.9.0
 
 dev_dependencies:
   flutter_test:
