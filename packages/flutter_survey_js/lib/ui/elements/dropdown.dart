@@ -101,17 +101,9 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           .map(
             (e) => DropdownMenuItem(
               value: e.value?.value,
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.right,          // align text to right
-                    textDirection: TextDirection.rtl,    // force RTL
-                  ),
-                ),
+              child: Text(
+                e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
           )
@@ -119,94 +111,52 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
       if (widget.dropdown.showNoneItem == true)
         DropdownMenuItem(
             value: noneValue,
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  e.noneText?.getLocalizedText(context) ??
-                      S.of(context).noneItemText,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.right,          // align text to right
-                  textDirection: TextDirection.rtl,    // force RTL
-                ),
-              ),
+            child: Text(
+              e.noneText?.getLocalizedText(context) ??
+                  S.of(context).noneItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
             )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
             value: selectbaseController.storeOtherAsComment
                 ? otherValue
                 : selectbaseController.otherValue,
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    e.otherText?.getLocalizedText(context) ??
-                        S.of(context).otherItemText,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.right,          // align text to right
-                    textDirection: TextDirection.rtl,    // force RTL
-                  ),
-                ),
-              ),
+            child: Text(
+              e.otherText?.getLocalizedText(context) ??
+                  S.of(context).otherItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
             )),
     ];
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: SelectbaseWidget(
-        controller: selectbaseController,
-        otherValueChanged: (value) {
-          if (!selectbaseController.storeOtherAsComment) {
-            getCurrentControl().value = value;
-          } else {
-            getCurrentControl().value = otherValue;
-          }
-        },
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            dropdownMenuTheme: const DropdownMenuThemeData(
-              menuStyle: MenuStyle(alignment: Alignment.centerRight),
-            ),
-          ),
-          child: ReactiveDropdownField<dynamic>(
-                formControlName: e.name!,
-                hint: Text(e.placeholder?.getLocalizedText(context) ??
-                    S.of(context).placeholder,
-                  textAlign: TextAlign.right,),
-                onChanged: (control) {
-                  if (widget.dropdown.showOtherItem ?? false) {
-                    if (selectbaseController.storeOtherAsComment) {
-                      selectbaseController.setShowOther(control.value == otherValue);
-                    } else {
-                      selectbaseController.setShowOther(isOtherValue(control.value));
-                    }
-                  } else {
-                    selectbaseController.setShowOther(false);
-                  }
-                  if (widget.dropdown.showNoneItem ?? false) {
-                    if (control.value == noneValue) {
-                      selectbaseController.setShowOther(false);
-                    }
-                  }
-                },
-              items: dropdownItems.map((item) {
-                return DropdownMenuItem<dynamic>(
-                  value: item.value,
-                  child: Align(
-                    alignment: Alignment.centerRight,       // Align text to right
-                    child: Text(
-                      (item.child as Text).data ?? '',
-                      style: (item.child as Text).style,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                );
-              }).toList(),),
-        ),
-      ),
+    return SelectbaseWidget(
+      controller: selectbaseController,
+      otherValueChanged: (value) {
+        if (!selectbaseController.storeOtherAsComment) {
+          getCurrentControl().value = value;
+        } else {
+          getCurrentControl().value = otherValue;
+        }
+      },
+      child: ReactiveDropdownField<dynamic>(
+          formControlName: e.name!,
+          hint: Text(e.placeholder?.getLocalizedText(context) ??
+              S.of(context).placeholder),
+          onChanged: (control) {
+            if (widget.dropdown.showOtherItem ?? false) {
+              if (selectbaseController.storeOtherAsComment) {
+                selectbaseController.setShowOther(control.value == otherValue);
+              } else {
+                selectbaseController.setShowOther(isOtherValue(control.value));
+              }
+            } else {
+              selectbaseController.setShowOther(false);
+            }
+            if (widget.dropdown.showNoneItem ?? false) {
+              if (control.value == noneValue) {
+                selectbaseController.setShowOther(false);
+              }
+            }
+          },
+          items: dropdownItems),
     );
   }
 }
