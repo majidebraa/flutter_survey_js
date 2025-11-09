@@ -11,9 +11,12 @@ Widget dropdownBuilder(BuildContext context, s.Elementbase element,
     {ElementConfiguration? configuration}) {
   final e = (element as s.Dropdown);
 
-  return _DropdownWidget(
-    dropdown: e,
-  ).wrapQuestionTitle(context, e, configuration: configuration);
+  return Directionality(
+    textDirection: TextDirection.rtl,
+    child: _DropdownWidget(
+      dropdown: e,
+    ).wrapQuestionTitle(context, e, configuration: configuration),
+  );
 }
 
 class _DropdownWidget<T> extends StatefulWidget {
