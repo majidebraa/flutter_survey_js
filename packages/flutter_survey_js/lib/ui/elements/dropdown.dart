@@ -141,8 +141,10 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
       },
       child: ReactiveDropdownField<dynamic>(
           formControlName: e.name!,
-          hint: Text(e.placeholder?.getLocalizedText(context) ??
+          hint: Text(
+              e.placeholder?.getLocalizedText(context) ??
               S.of(context).placeholder),
+
           onChanged: (control) {
             if (widget.dropdown.showOtherItem ?? false) {
               if (selectbaseController.storeOtherAsComment) {
@@ -159,7 +161,10 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               }
             }
           },
-          items: dropdownItems),
+          items: dropdownItems,
+          alignment: AlignmentDirectional.centerEnd,
+
+      ),
     );
   }
 }
