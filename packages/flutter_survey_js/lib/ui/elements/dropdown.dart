@@ -133,40 +133,44 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
               style: Theme.of(context).textTheme.bodyMedium,
             )),
     ];
-    return SelectbaseWidget(
-      controller: selectbaseController,
-      otherValueChanged: (value) {
-        if (!selectbaseController.storeOtherAsComment) {
-          getCurrentControl().value = value;
-        } else {
-          getCurrentControl().value = otherValue;
-        }
-      },
-      child: ReactiveDropdownField<dynamic>(
-          formControlName: e.name!,
-          hint: Text(
-              e.placeholder?.getLocalizedText(context) ??
-              S.of(context).placeholder),
+    return Localizations.override(
+      context: context,
+      locale: const Locale('fa'),
+      child: SelectbaseWidget(
+        controller: selectbaseController,
+        otherValueChanged: (value) {
+          if (!selectbaseController.storeOtherAsComment) {
+            getCurrentControl().value = value;
+          } else {
+            getCurrentControl().value = otherValue;
+          }
+        },
+        child: ReactiveDropdownField<dynamic>(
+            formControlName: e.name!,
+            hint: Text(
+                e.placeholder?.getLocalizedText(context) ??
+                S.of(context).placeholder),
 
-          onChanged: (control) {
-            if (widget.dropdown.showOtherItem ?? false) {
-              if (selectbaseController.storeOtherAsComment) {
-                selectbaseController.setShowOther(control.value == otherValue);
+            onChanged: (control) {
+              if (widget.dropdown.showOtherItem ?? false) {
+                if (selectbaseController.storeOtherAsComment) {
+                  selectbaseController.setShowOther(control.value == otherValue);
+                } else {
+                  selectbaseController.setShowOther(isOtherValue(control.value));
+                }
               } else {
-                selectbaseController.setShowOther(isOtherValue(control.value));
-              }
-            } else {
-              selectbaseController.setShowOther(false);
-            }
-            if (widget.dropdown.showNoneItem ?? false) {
-              if (control.value == noneValue) {
                 selectbaseController.setShowOther(false);
               }
-            }
-          },
-          items: dropdownItems,
-          alignment: AlignmentDirectional.centerEnd,
+              if (widget.dropdown.showNoneItem ?? false) {
+                if (control.value == noneValue) {
+                  selectbaseController.setShowOther(false);
+                }
+              }
+            },
+            items: dropdownItems,
+            alignment: AlignmentDirectional.centerEnd,
 
+        ),
       ),
     );
   }
