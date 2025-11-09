@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_survey_js/flutter_survey_js.dart'
-    hide Text, TextInputType;
-
+import 'package:flutter_survey_js/flutter_survey_js.dart' hide Text, TextInputType;
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:reactive_forms/reactive_forms.dart';
+import 'package:shamsi_date/shamsi_date.dart'; // ⬅️ For Persian calendar
 
 enum ReactiveDatePickerFieldType {
   date,
@@ -11,49 +10,10 @@ enum ReactiveDatePickerFieldType {
   dateTime,
 }
 
-typedef GetInitialDate = DateTime Function(
-    DateTime? fieldValue, DateTime lastDate);
-
+typedef GetInitialDate = DateTime Function(DateTime? fieldValue, DateTime lastDate);
 typedef GetInitialTime = TimeOfDay Function(DateTime? fieldValue);
 
-/// A builder that builds a widget responsible to decide when to show
-/// the picker dialog.
-///
-/// It has a property to access the [FormControl]
-/// that is bound to [ReactiveDatePickerField].
-
-/// This is a convenience widget that wraps the function
-/// [showDatePicker] and [showTimePicker] in a [ReactiveDatePickerField].
-///
-/// The [formControlName] is required to bind this [ReactiveDatePickerField]
-/// to a [FormControl].
-///
-/// For documentation about the various parameters, see the [showDatePicker]
-/// and [showTimePicker] function parameters.
-///
-/// ## Example:
-///
-/// ```dart
-/// ReactiveDatePickerField(
-///   formControlName: 'birthday',
-/// )
-/// ```
 class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
-  /// Creates a [ReactiveDatePickerField] that wraps the function [showDatePicker].
-  ///
-  /// Can optionally provide a [formControl] to bind this widget to a control.
-  ///
-  /// Can optionally provide a [formControlName] to bind this ReactiveFormField
-  /// to a [FormControl].
-  ///
-  /// Must provide one of the arguments [formControl] or a [formControlName],
-  /// but not both at the same time.
-  ///
-  /// The parameter [transitionBuilder] is the equivalent of [builder]
-  /// parameter in the [showTimePicker].
-  ///
-  /// For documentation about the various parameters, see the [showTimePicker]
-  /// function parameters.
   ReactiveDateTimePicker({
     Key? key,
     String? formControlName,
@@ -62,25 +22,14 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     Map<String, ValidationMessageFunction>? validationMessages,
     ShowErrorsFunction? showErrors,
 
-    ////////////////////////////////////////////////////////////////////////////
+    // UI parameters
     TextStyle? style,
     ReactiveDatePickerFieldType type = ReactiveDatePickerFieldType.date,
     InputDecoration? decoration,
     bool showClearIcon = true,
     Widget clearIcon = const Icon(Icons.clear),
 
-    // common params
-    TransitionBuilder? builder,
-    bool useRootNavigator = true,
-    String? cancelText,
-    String? confirmText,
-    String? helpText,
-    GetInitialDate? getInitialDate,
-    GetInitialTime? getInitialTime,
-    DateFormat? dateFormat,
-    double disabledOpacity = 0.5,
-
-    // date picker params
+    // Date picker params
     DateTime? firstDate,
     DateTime? lastDate,
     DatePickerEntryMode datePickerEntryMode = DatePickerEntryMode.calendar,
@@ -88,158 +37,152 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     Locale? locale,
     TextDirection? textDirection,
     DatePickerMode initialDatePickerMode = DatePickerMode.day,
-    String? errorFormatText,
-    String? errorInvalidText,
-    String? fieldHintText,
-    String? fieldLabelText,
+    String? cancelText,
+    String? confirmText,
+    String? helpText,
+    GetInitialDate? getInitialDate,
+    GetInitialTime? getInitialTime,
+    DateFormat? dateFormat,
+    double disabledOpacity = 0.5,
     RouteSettings? datePickerRouteSettings,
     TextInputType? keyboardType,
     Offset? anchorPoint,
 
-    // time picker params
+    // Time picker params
     TimePickerEntryMode timePickerEntryMode = TimePickerEntryMode.dial,
     RouteSettings? timePickerRouteSettings,
+    TransitionBuilder? builder,
+    bool useRootNavigator = true,
   }) : super(
-          key: key,
-          formControl: formControl,
-          formControlName: formControlName,
-          validationMessages: validationMessages,
-          valueAccessor: valueAccessor,
-          showErrors: showErrors,
-          builder: (field) {
-            Widget? suffixIcon = decoration?.suffixIcon;
-            final isEmptyValue =
-                field.value == null || field.value?.isEmpty == true;
+    key: key,
+    formControl: formControl,
+    formControlName: formControlName,
+    validationMessages: validationMessages,
+    valueAccessor: valueAccessor,
+    showErrors: showErrors,
+    builder: (field) {
+      Widget? suffixIcon = decoration?.suffixIcon;
+      final isEmptyValue = field.value == null || field.value?.isEmpty == true;
 
-            if (showClearIcon && !isEmptyValue) {
-              suffixIcon = InkWell(
-                borderRadius: BorderRadius.circular(25),
-                child: clearIcon,
-                onTap: () {
-                  field.control.markAsTouched();
-                  field.didChange(null);
-                },
-              );
-            }
-
-            final InputDecoration effectiveDecoration =
-                (decoration ?? const InputDecoration())
-                    .applyDefaults(Theme.of(field.context).inputDecorationTheme)
-                    .copyWith(suffixIcon: suffixIcon);
-            final effectiveValueAccessor =
-                _effectiveValueAccessor(type, dateFormat);
-            final effectiveLastDate = lastDate ?? DateTime(2100);
-
-            return IgnorePointer(
-              ignoring: !field.control.enabled,
-              child: Opacity(
-                opacity: field.control.enabled ? 1 : disabledOpacity,
-                child: GestureDetector(
-                  onTap: () async {
-                    DateTime? date;
-                    TimeOfDay? time;
-                    field.control.focus();
-                    field.control.updateValueAndValidity();
-
-                    final fieldDatetimeValue =
-                        field.control.value.tryCastToDateTime();
-
-                    if (type == ReactiveDatePickerFieldType.date ||
-                        type == ReactiveDatePickerFieldType.dateTime) {
-                      date = await showDatePicker(
-                        context: field.context,
-                        initialDate: (getInitialDate ?? _getInitialDate)(
-                          fieldDatetimeValue,
-                          effectiveLastDate,
-                        ),
-                        firstDate: firstDate ?? DateTime(1900),
-                        lastDate: effectiveLastDate,
-                        initialEntryMode: datePickerEntryMode,
-                        selectableDayPredicate: selectableDayPredicate,
-                        helpText: helpText,
-                        cancelText: cancelText,
-                        confirmText: confirmText,
-                        locale: locale,
-                        useRootNavigator: useRootNavigator,
-                        routeSettings: datePickerRouteSettings,
-                        textDirection: textDirection,
-                        builder: builder,
-                        initialDatePickerMode: initialDatePickerMode,
-                        errorFormatText: errorFormatText,
-                        errorInvalidText: errorInvalidText,
-                        fieldHintText: fieldHintText,
-                        fieldLabelText: fieldLabelText,
-                        keyboardType: keyboardType,
-                        anchorPoint: anchorPoint,
-                      );
-                    }
-
-                    if (type == ReactiveDatePickerFieldType.time ||
-                        (type == ReactiveDatePickerFieldType.dateTime &&
-                            // there is no need to show timepicker if cancel was pressed on datepicker
-                            date != null)) {
-                      time = await showTimePicker(
-                        context: field.context,
-                        initialTime: (getInitialTime ??
-                            _getInitialTime)(fieldDatetimeValue),
-                        builder: builder,
-                        useRootNavigator: useRootNavigator,
-                        initialEntryMode: timePickerEntryMode,
-                        cancelText: cancelText,
-                        confirmText: confirmText,
-                        helpText: helpText,
-                        routeSettings: timePickerRouteSettings,
-                      );
-                    }
-
-                    if (
-                        // if `date` and `time` in `dateTime` mode is not empty...
-                        (type == ReactiveDatePickerFieldType.dateTime &&
-                                (date != null && time != null)) ||
-                            // ... or if `date` in `date` mode is not empty ...
-                            (type == ReactiveDatePickerFieldType.date &&
-                                date != null) ||
-                            // ... or if `time` in `time` mode is not empty ...
-                            (type == ReactiveDatePickerFieldType.time &&
-                                time != null)) {
-                      final dateTime = _combine(date, time);
-
-                      final value = field.control.value.tryCastToDateTime();
-                      // ... and new value is not the same as was before...
-                      if (value == null || dateTime.compareTo(value) != 0) {
-                        // ... this means that cancel was not pressed at any moment
-                        // so we can update the field
-                        field.didChange(
-                          effectiveValueAccessor.modelToViewValue(
-                            dateTime,
-                          ),
-                        );
-                      }
-                    }
-                    field.control.unfocus();
-                    field.control.updateValueAndValidity();
-                    field.control.markAsTouched();
-                  },
-                  child: InputDecorator(
-                    decoration: effectiveDecoration.copyWith(
-                      errorText: field.errorText,
-                      enabled: field.control.enabled,
-                    ),
-                    isFocused: field.control.hasFocus,
-                    isEmpty: isEmptyValue,
-                    child: Text(
-                      field.value ?? '',
-                      style: Theme.of(field.context)
-                          .textTheme
-                          .titleMedium
-                          ?.merge(style),
-                    ),
-                  ),
-                ),
-              ),
-            );
+      if (showClearIcon && !isEmptyValue) {
+        suffixIcon = InkWell(
+          borderRadius: BorderRadius.circular(25),
+          child: clearIcon,
+          onTap: () {
+            field.control.markAsTouched();
+            field.didChange(null);
           },
         );
+      }
+
+      final InputDecoration effectiveDecoration =
+      (decoration ?? const InputDecoration())
+          .applyDefaults(Theme.of(field.context).inputDecorationTheme)
+          .copyWith(suffixIcon: suffixIcon);
+
+      final effectiveValueAccessor = _effectiveValueAccessor(type, dateFormat);
+      final effectiveLastDate = lastDate ?? DateTime(2100);
+
+      return IgnorePointer(
+        ignoring: !field.control.enabled,
+        child: Opacity(
+          opacity: field.control.enabled ? 1 : disabledOpacity,
+          child: GestureDetector(
+            onTap: () async {
+              DateTime? date;
+              TimeOfDay? time;
+              field.control.focus();
+              field.control.updateValueAndValidity();
+
+              final fieldDatetimeValue = field.control.value.tryCastToDateTime();
+
+              if (type == ReactiveDatePickerFieldType.date ||
+                  type == ReactiveDatePickerFieldType.dateTime) {
+                // Use Persian (Jalali) date picker
+                final jalaliInitial = fieldDatetimeValue != null
+                    ? Jalali.fromDateTime(fieldDatetimeValue)
+                    : Jalali.now();
+                final jalaliFirst = firstDate != null
+                    ? Jalali.fromDateTime(firstDate)
+                    : Jalali(1300, 1);
+                final jalaliLast = Jalali.fromDateTime(effectiveLastDate);
+
+                final picked = await showDialog<Jalali>(
+                  context: field.context,
+                  builder: (context) => Dialog(
+                    child: SizedBox(
+                      height: 300,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: CalendarDatePicker(
+                              initialDate: jalaliInitial.toDateTime(),
+                              firstDate: jalaliFirst.toDateTime(),
+                              lastDate: jalaliLast.toDateTime(),
+                              onDateChanged: (val) {
+                                date = val;
+                                Navigator.of(context).pop(Jalali.fromDateTime(val));
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+
+                if (picked != null) {
+                  date = picked.toDateTime();
+                }
+              }
+
+              if (type == ReactiveDatePickerFieldType.time ||
+                  (type == ReactiveDatePickerFieldType.dateTime &&
+                      date != null)) {
+                time = await showTimePicker(
+                  context: field.context,
+                  initialTime: (getInitialTime ?? _getInitialTime)(fieldDatetimeValue),
+                  builder: builder,
+                  useRootNavigator: useRootNavigator,
+                  initialEntryMode: timePickerEntryMode,
+                  cancelText: cancelText,
+                  confirmText: confirmText,
+                  helpText: helpText,
+                  routeSettings: timePickerRouteSettings,
+                );
+              }
+
+              if ((type == ReactiveDatePickerFieldType.dateTime &&
+                  date != null && time != null) ||
+                  (type == ReactiveDatePickerFieldType.date && date != null) ||
+                  (type == ReactiveDatePickerFieldType.time && time != null)) {
+                final dateTime = _combine(date, time);
+                final value = field.control.value.tryCastToDateTime();
+                if (value == null || dateTime.compareTo(value) != 0) {
+                  field.didChange(effectiveValueAccessor.modelToViewValue(dateTime));
+                }
+              }
+              field.control.unfocus();
+              field.control.updateValueAndValidity();
+              field.control.markAsTouched();
+            },
+            child: InputDecorator(
+              decoration: effectiveDecoration.copyWith(
+                errorText: field.errorText,
+                enabled: field.control.enabled,
+              ),
+              isFocused: field.control.hasFocus,
+              isEmpty: isEmptyValue,
+              child: Text(
+                _formatPersianDate(field.value),
+                style: Theme.of(field.context).textTheme.titleMedium?.merge(style),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
 
   static DateTimeValueAccessor _effectiveValueAccessor(
       ReactiveDatePickerFieldType fieldType, DateFormat? dateFormat) {
@@ -261,23 +204,13 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
 
   static DateTime _combine(DateTime? date, TimeOfDay? time) {
     DateTime dateTime = DateTime(0);
-
-    if (date != null) {
-      dateTime = dateTime.add(date.difference(dateTime));
-    }
-
-    if (time != null) {
-      dateTime = dateTime.add(Duration(hours: time.hour, minutes: time.minute));
-    }
-
+    if (date != null) dateTime = dateTime.add(date.difference(dateTime));
+    if (time != null) dateTime = dateTime.add(Duration(hours: time.hour, minutes: time.minute));
     return dateTime;
   }
 
   static DateTime _getInitialDate(DateTime? fieldValue, DateTime lastDate) {
-    if (fieldValue != null) {
-      return fieldValue;
-    }
-
+    if (fieldValue != null) return fieldValue;
     final now = DateTime.now();
     return now.compareTo(lastDate) > 0 ? lastDate : now;
   }
@@ -286,7 +219,27 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     if (fieldValue != null && fieldValue is DateTime) {
       return TimeOfDay(hour: fieldValue.hour, minute: fieldValue.minute);
     }
-
     return TimeOfDay.now();
+  }
+
+  static String _formatPersianDate(String? value) {
+    if (value == null || value.isEmpty) return '';
+    try {
+      final date = DateTime.parse(value);
+      final jalali = Jalali.fromDateTime(date);
+      return '${jalali.year}/${jalali.month}/${jalali.day}';
+    } catch (e) {
+      return value;
+    }
+  }
+}
+
+extension _CastToDateTime on String {
+  DateTime? tryCastToDateTime() {
+    try {
+      return DateTime.parse(this);
+    } catch (e) {
+      return null;
+    }
   }
 }

@@ -38,6 +38,8 @@ dependencies:
   path: ^1.8.3
   async: ^2.11.0
   collection: ^1.17.1
+  shamsi_date: ^1.0.2
+  persian_datetime_picker: ^2.5.0
 
 dev_dependencies:
   flutter_test:
