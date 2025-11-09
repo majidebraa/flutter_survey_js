@@ -101,9 +101,12 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           .map(
             (e) => DropdownMenuItem(
               value: e.value?.value,
-              child: Text(
-                e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Text(
+                  e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
             ),
           )
@@ -111,20 +114,26 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
       if (widget.dropdown.showNoneItem == true)
         DropdownMenuItem(
             value: noneValue,
-            child: Text(
-              e.noneText?.getLocalizedText(context) ??
-                  S.of(context).noneItemText,
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                e.noneText?.getLocalizedText(context) ??
+                    S.of(context).noneItemText,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
             value: selectbaseController.storeOtherAsComment
                 ? otherValue
                 : selectbaseController.otherValue,
-            child: Text(
-              e.otherText?.getLocalizedText(context) ??
-                  S.of(context).otherItemText,
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                e.otherText?.getLocalizedText(context) ??
+                    S.of(context).otherItemText,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             )),
     ];
     return SelectbaseWidget(
