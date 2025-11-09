@@ -85,9 +85,7 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
+    return Scaffold(
           floatingActionButton: _showBackToTopButton == false
               ? null
               : SizedBox(
@@ -137,18 +135,16 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
                       itemBuilder: (context, index) {
                         if (index < widget.page.getElements().length &&
                             index >= 0) {
-                          return SurveyConfiguration.of(context)!.factory.resolve(
+                          final elementWidget =  SurveyConfiguration.of(context)!.factory.resolve(
                               context,
                               widget
                                   .page.getElements()[index]);
-                        } else {
-                          return Container(
-                            width: double.infinity,
-                            // child: Image.asset(
-                            //   'assets/images/decision.jpg',
-                            //   fit: BoxFit.fill,
-                            // ),
+                          return Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: elementWidget,
                           );
+                        } else {
+                          return const SizedBox.shrink();
                         }
                       },
                       separatorBuilder: (BuildContext context, int index) {
@@ -163,7 +159,6 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
                 ],
               ),
             ),
-          )),
-    );
+          ));
   }
 }
