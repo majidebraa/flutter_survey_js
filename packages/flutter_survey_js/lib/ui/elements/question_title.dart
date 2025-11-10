@@ -67,7 +67,12 @@ class QuestionTitle extends StatelessWidget {
         return Container();
       }));
 
-
+      if (q.isRequired == true) {
+        listTitle.add(Text(
+          '* ',
+          style: requiredTextStyle,
+        ));
+      }
 
       listTitle.add(Expanded(
         child: Text(
@@ -75,13 +80,6 @@ class QuestionTitle extends StatelessWidget {
           style: titleTextStyle(),
         ),
       ));
-
-      if (q.isRequired == true) {
-        listTitle.add(Text(
-          '* ',
-          style: requiredTextStyle,
-        ));
-      }
 
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,

@@ -85,85 +85,82 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-          floatingActionButton: _showBackToTopButton == false
-              ? null
-              : SizedBox(
-                  height: 45.0,
-                  width: 45.0,
-                  child: FittedBox(
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        itemScrollController.jumpTo(index: 0);
-                      },
-                      child: const Icon(
-                        Icons.arrow_upward,
-                      ),
+    return Scaffold(
+        floatingActionButton: _showBackToTopButton == false
+            ? null
+            : SizedBox(
+                height: 45.0,
+                width: 45.0,
+                child: FittedBox(
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      itemScrollController.jumpTo(index: 0);
+                    },
+                    child: const Icon(
+                      Icons.arrow_upward,
                     ),
                   ),
                 ),
-          body: GestureDetector(
-            onTap: () {
-              WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
-            },
-            child: Container(
-              padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-              color: Colors.white,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(
-                    height: 5.0,
-                  ),
-                  if (widget.page.title != null ||
-                      widget.page.description != null)
-                    Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: PanelTitle(
-                        panel: widget.page,
-                        onTimeout: () {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  Expanded(
-                    child: ScrollablePositionedList.separated(
-                      physics: const ClampingScrollPhysics(),
-                      itemCount: maxIndex,
-                      itemScrollController: itemScrollController,
-                      itemPositionsListener: itemPositionsListener,
-                      itemBuilder: (context, index) {
-                        if (index < widget.page.getElements().length &&
-                            index >= 0) {
-                          return SurveyConfiguration.of(context)!.factory.resolve(
-                              context,
-                              widget
-                                  .page.getElements()[index]);
-                        } else {
-                          return Container(
-                            width: double.infinity,
-                            // child: Image.asset(
-                            //   'assets/images/decision.jpg',
-                            //   fit: BoxFit.fill,
-                            // ),
-                          );
-                        }
-                      },
-                      separatorBuilder: (BuildContext context, int index) {
-                        return SurveyConfiguration.of(context)!
-                            .separatorBuilder(context);
-                      },
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ) //: Container()
-                ],
               ),
+        body: GestureDetector(
+          onTap: () {
+            WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
+          },
+          child: Container(
+            padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+            color: Colors.white,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                const SizedBox(
+                  height: 5.0,
+                ),
+                if (widget.page.title != null ||
+                    widget.page.description != null)
+                  Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: PanelTitle(
+                      panel: widget.page,
+                      onTimeout: () {
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                Expanded(
+                  child: ScrollablePositionedList.separated(
+                    physics: const ClampingScrollPhysics(),
+                    itemCount: maxIndex,
+                    itemScrollController: itemScrollController,
+                    itemPositionsListener: itemPositionsListener,
+                    itemBuilder: (context, index) {
+                      if (index < widget.page.getElements().length &&
+                          index >= 0) {
+                        return SurveyConfiguration.of(context)!.factory.resolve(
+                            context,
+                            widget
+                                .page.getElements()[index]);
+                      } else {
+                        return Container(
+                          width: double.infinity,
+                          // child: Image.asset(
+                          //   'assets/images/decision.jpg',
+                          //   fit: BoxFit.fill,
+                          // ),
+                        );
+                      }
+                    },
+                    separatorBuilder: (BuildContext context, int index) {
+                      return SurveyConfiguration.of(context)!
+                          .separatorBuilder(context);
+                    },
+                  ),
+                ),
+                const SizedBox(
+                  height: 45,
+                ) //: Container()
+              ],
             ),
-          )),
-    );
+          ),
+        ));
   }
 }
