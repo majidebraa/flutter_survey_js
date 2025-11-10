@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/flutter_survey_js.dart'
     hide Text, TextInputType;
-
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:persian_datetime_picker/persian_datetime_picker.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 enum ReactiveDatePickerFieldType {
   date,
@@ -63,6 +62,9 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     // time picker params
     TimePickerEntryMode timePickerEntryMode = TimePickerEntryMode.dial,
     RouteSettings? timePickerRouteSettings,
+
+    // new option
+    bool usePersianCalendar = true,
   }) : super(
     key: key,
     formControl: formControl,
@@ -102,30 +104,41 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
             onTap: () async {
               DateTime? date;
               TimeOfDay? time;
-
               field.control.focus();
               field.control.updateValueAndValidity();
 
               final fieldDatetimeValue =
               field.control.value.tryCastToDateTime();
 
-              // ✅ Replace Gregorian picker with Persian picker
-              if (type == ReactiveDatePickerFieldType.date ||
+              // Persian calendar mode
+              if (usePersianCalendar &&
+                  (type == ReactiveDatePickerFieldType.date ||
+                      type == ReactiveDatePickerFieldType.dateTime)) {
+                // show a simple AlertDialog picker using shamsi_date
+                final now = Jalali.now();
+                final initial = fieldDatetimeValue != null
+                    ? Gregorian.fromDateTime(fieldDatetimeValue).toJalali()
+                    : now;
+
+                final picked = await _showSimplePersianPicker(
+                    field.context, initial);
+
+                if (picked != null) {
+                  date = picked.toDateTime();
+                }
+              } else if (type == ReactiveDatePickerFieldType.date ||
                   type == ReactiveDatePickerFieldType.dateTime) {
-                final jalaliDate = await showPersianDatePicker(
+                // Gregorian (default) date picker
+                date = await showDatePicker(
                   context: field.context,
-                  initialDate: Jalali.fromDateTime(
-                    (getInitialDate ?? _getInitialDate)(
-                      fieldDatetimeValue,
-                      effectiveLastDate,
-                    ),
+                  initialDate: (getInitialDate ?? _getInitialDate)(
+                    fieldDatetimeValue,
+                    effectiveLastDate,
                   ),
-                  firstDate: Jalali.fromDateTime(
-                      firstDate ?? DateTime(1900, 1, 1)),
-                  lastDate: Jalali.fromDateTime(effectiveLastDate),
-                  initialEntryMode: datePickerEntryMode == DatePickerEntryMode.input
-                      ? PDatePickerEntryMode.input
-                      : PDatePickerEntryMode.calendar,
+                  firstDate: firstDate ?? DateTime(1900),
+                  lastDate: effectiveLastDate,
+                  initialEntryMode: datePickerEntryMode,
+                  selectableDayPredicate: selectableDayPredicate,
                   helpText: helpText,
                   cancelText: cancelText,
                   confirmText: confirmText,
@@ -134,17 +147,14 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
                   routeSettings: datePickerRouteSettings,
                   textDirection: textDirection,
                   builder: builder,
+                  initialDatePickerMode: initialDatePickerMode,
                   errorFormatText: errorFormatText,
                   errorInvalidText: errorInvalidText,
-                  fieldHintText: fieldHintText ?? "",
-                  fieldLabelText: fieldLabelText ?? "",
-                  //keyboardType: keyboardType,
-                  //anchorPoint: anchorPoint,
+                  fieldHintText: fieldHintText,
+                  fieldLabelText: fieldLabelText,
+                  keyboardType: keyboardType,
+                  anchorPoint: anchorPoint,
                 );
-
-                if (jalaliDate != null) {
-                  date = jalaliDate.toDateTime();
-                }
               }
 
               if (type == ReactiveDatePickerFieldType.time ||
@@ -164,27 +174,18 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
                 );
               }
 
-              if (
-              // if `date` and `time` in `dateTime` mode is not empty...
-              (type == ReactiveDatePickerFieldType.dateTime &&
+              if ((type == ReactiveDatePickerFieldType.dateTime &&
                   (date != null && time != null)) ||
-                  // ... or if `date` in `date` mode is not empty ...
                   (type == ReactiveDatePickerFieldType.date &&
                       date != null) ||
-                  // ... or if `time` in `time` mode is not empty ...
                   (type == ReactiveDatePickerFieldType.time &&
                       time != null)) {
                 final dateTime = _combine(date, time);
 
                 final value = field.control.value.tryCastToDateTime();
-                // ... and new value is not the same as was before...
                 if (value == null || dateTime.compareTo(value) != 0) {
-                  // ... this means that cancel was not pressed at any moment
-                  // so we can update the field
                   field.didChange(
-                    effectiveValueAccessor.modelToViewValue(
-                      dateTime,
-                    ),
+                    effectiveValueAccessor.modelToViewValue(dateTime),
                   );
                 }
               }
@@ -214,6 +215,44 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     },
   );
 
+  // Simple Persian date picker (for demo; you can replace with a full widget later)
+  static Future<Jalali?> _showSimplePersianPicker(
+      BuildContext context, Jalali initial) async {
+    Jalali selected = initial;
+    return showDialog<Jalali>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('انتخاب تاریخ شمسی'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  '${selected.year}/${selected.month.toString().padLeft(2, '0')}/${selected.day.toString().padLeft(2, '0')}'),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop(Jalali.now());
+                },
+                child: const Text('امروز'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text('لغو'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, selected),
+              child: const Text('تأیید'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   static DateTimeValueAccessor _effectiveValueAccessor(
       ReactiveDatePickerFieldType fieldType, DateFormat? dateFormat) {
     switch (fieldType) {
@@ -234,17 +273,23 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
 
   static DateTime _combine(DateTime? date, TimeOfDay? time) {
     DateTime dateTime = DateTime(0);
+
     if (date != null) {
       dateTime = dateTime.add(date.difference(dateTime));
     }
+
     if (time != null) {
       dateTime = dateTime.add(Duration(hours: time.hour, minutes: time.minute));
     }
+
     return dateTime;
   }
 
   static DateTime _getInitialDate(DateTime? fieldValue, DateTime lastDate) {
-    if (fieldValue != null) return fieldValue;
+    if (fieldValue != null) {
+      return fieldValue;
+    }
+
     final now = DateTime.now();
     return now.compareTo(lastDate) > 0 ? lastDate : now;
   }
@@ -253,6 +298,7 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     if (fieldValue != null && fieldValue is DateTime) {
       return TimeOfDay(hour: fieldValue.hour, minute: fieldValue.minute);
     }
+
     return TimeOfDay.now();
   }
 }
