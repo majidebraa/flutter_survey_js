@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/flutter_survey_js.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
@@ -44,18 +43,12 @@ class SurveyWidgetState extends State<SurveyWidget> {
   final Logger logger = Logger('SurveyWidgetState');
 
   late int pageCount;
-
   StreamSubscription<Map<String, Object?>?>? _listener;
-
   int _currentPage = 0;
-
-  // TODO calculate initial page
   int initialPage = 0;
 
   int get currentPage => _currentPage;
-
   late ElementNode rootNode;
-
   FormGroup get formGroup => rootNode.control as FormGroup;
 
   @override
@@ -78,44 +71,56 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Extract outcomeType list from survey JSON
+    final List<String> outcomeTypes =
+        (widget.survey.json?['outcomeType'] as List?)?.cast<String>() ?? [];
+
     return SurveyConfiguration.copyAncestor(
-        context: context,
-        child: ReactiveForm(
-          formGroup: formGroup,
-          child: StreamBuilder(
-            stream: formGroup.valueChanges,
-            builder: (BuildContext context,
-                AsyncSnapshot<Map<String, Object?>?> snapshot) {
-              return SurveyProvider(
-                survey: widget.survey,
-                formGroup: formGroup,
-                rootNode: rootNode,
-                currentPage: currentPage,
-                initialPage: initialPage,
-                child: Builder(
-                    builder: (context) =>
-                        (widget.builder ?? defaultBuilder)(context)),
-              );
-            },
-          ),
-        ));
+      context: context,
+      child: ReactiveForm(
+        formGroup: formGroup,
+        child: StreamBuilder(
+          stream: formGroup.valueChanges,
+          builder:
+              (BuildContext context, AsyncSnapshot<Map<String, Object?>?> snapshot) {
+            return SurveyProvider(
+              survey: widget.survey,
+              formGroup: formGroup,
+              rootNode: rootNode,
+              currentPage: currentPage,
+              initialPage: initialPage,
+              child: Builder(
+                builder: (context) => SurveyLayout(
+                  outcomeTypes: outcomeTypes,
+                  onAction: (action, data) {
+                    widget.onSubmit?.call({
+                      'action': action,
+                      'data': data,
+                    });
+                  },
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   void rerunExpression(Map<String, Object?> values) {
-    // final properties = ExpressionHelper.getInitalProperty(widget.survey);
     rootNode.runExpression(values, {});
   }
 
   void rebuildForm() {
     logger.fine("Rebuild form");
     _listener?.cancel();
-    //clear
     _currentPage = 0;
     rootNode = ElementNode(
-        element: null,
-        rawElement: null,
-        survey: widget.survey,
-        isRootSurvey: true);
+      element: null,
+      rawElement: null,
+      survey: widget.survey,
+      isRootSurvey: true,
+    );
 
     constructElementNode(context, rootNode);
 
@@ -128,11 +133,14 @@ class SurveyWidgetState extends State<SurveyWidget> {
     pageCount = widget.survey.getPageCount();
   }
 
-  bool submit() {
+  bool submit({String action = "SUBMIT"}) {
     if (formGroup.valid) {
-      widget.onSubmit?.call(widget.removingEmptyFields
-          ? removeEmptyField(formGroup.value)
-          : formGroup.value);
+      widget.onSubmit?.call({
+        'action': action,
+        'data': widget.removingEmptyFields
+            ? removeEmptyField(formGroup.value)
+            : formGroup.value,
+      });
       return true;
     } else {
       widget.onErrors?.call(formGroup.errors);
@@ -164,7 +172,6 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
-  // nextPageOrSubmit return true if submit or return false for next page
   bool nextPageOrSubmit() {
     final bool finished = _currentPage >= pageCount - 1;
     if (!finished) {
@@ -179,10 +186,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
 class SurveyProvider extends InheritedWidget {
   final s.Survey survey;
   final FormGroup formGroup;
-
   final int currentPage;
   final int initialPage;
-
   final ElementNode rootNode;
 
   const SurveyProvider({
@@ -203,54 +208,23 @@ class SurveyProvider extends InheritedWidget {
   bool updateShouldNotify(covariant SurveyProvider oldWidget) => true;
 }
 
-// SurveyController use to control SurveyWidget behavior
 class SurveyController {
   SurveyWidgetState? _widgetState;
-
-  int get currentPage {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    return _widgetState!._currentPage;
-  }
-
-  int get pageCount {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    return _widgetState!.pageCount;
-  }
+  int get currentPage => _widgetState!._currentPage;
+  int get pageCount => _widgetState!.pageCount;
 
   void _bind(SurveyWidgetState state) {
-    assert(_widgetState == null,
-        "Don't use one SurveyController to multiple SurveyWidget");
     _widgetState = state;
   }
 
-  void _detach() {
-    _widgetState = null;
-  }
+  void _detach() => _widgetState = null;
 
-  bool submit() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    return _widgetState!.submit();
-  }
-
-  // nextPageOrSubmit return true if submit or return false for next page
-  bool nextPageOrSubmit() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    return _widgetState!.nextPageOrSubmit();
-  }
-
-  void prePage() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    toPage(currentPage - 1);
-  }
-
-  void toPage(int newPage) {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.toPage(newPage);
-  }
+  bool submit({String action = "SUBMIT"}) => _widgetState!.submit(action: action);
+  bool nextPageOrSubmit() => _widgetState!.nextPageOrSubmit();
+  void prePage() => toPage(currentPage - 1);
+  void toPage(int newPage) => _widgetState!.toPage(newPage);
 }
 
 extension SurveyExtension on s.Survey {
-  int getPageCount() {
-    return (pages?.toList() ?? []).length;
-  }
+  int getPageCount() => (pages?.toList() ?? []).length;
 }
