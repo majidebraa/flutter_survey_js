@@ -22,16 +22,14 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "add": MessageLookupByLibrary.simpleMessage("Ajouter"),
-        "nextPage": MessageLookupByLibrary.simpleMessage("Suivant"),
-        "noneItemText": MessageLookupByLibrary.simpleMessage("Nul"),
-        "otherItemText":
-            MessageLookupByLibrary.simpleMessage("Autre (décrire)"),
-        "placeholder": MessageLookupByLibrary.simpleMessage("Sélectionner..."),
-        "previousPage": MessageLookupByLibrary.simpleMessage("Précédent"),
-        "remove": MessageLookupByLibrary.simpleMessage("Supprimer"),
-        "selectAllText":
-            MessageLookupByLibrary.simpleMessage("Tout sélectionner"),
-        "submitSurvey": MessageLookupByLibrary.simpleMessage("Envoyer")
-      };
+    "add": MessageLookupByLibrary.simpleMessage("Ajouter"),
+    "nextPage": MessageLookupByLibrary.simpleMessage("Suivant"),
+    "noneItemText": MessageLookupByLibrary.simpleMessage("Nul"),
+    "otherItemText": MessageLookupByLibrary.simpleMessage("Autre (décrire)"),
+    "placeholder": MessageLookupByLibrary.simpleMessage("Sélectionner..."),
+    "previousPage": MessageLookupByLibrary.simpleMessage("Précédent"),
+    "remove": MessageLookupByLibrary.simpleMessage("Supprimer"),
+    "selectAllText": MessageLookupByLibrary.simpleMessage("Tout sélectionner"),
+    "submitSurvey": MessageLookupByLibrary.simpleMessage("Envoyer"),
+  };
 }

@@ -18,8 +18,10 @@ class S {
   static S? _current;
 
   static S get current {
-    assert(_current != null,
-        'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.');
+    assert(
+      _current != null,
+      'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.',
+    );
     return _current!;
   }
 
@@ -41,8 +43,10 @@ class S {
 
   static S of(BuildContext context) {
     final instance = S.maybeOf(context);
-    assert(instance != null,
-        'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?');
+    assert(
+      instance != null,
+      'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?',
+    );
     return instance!;
   }
 
@@ -52,12 +56,7 @@ class S {
 
   /// `Next Page`
   String get nextPage {
-    return Intl.message(
-      'Next Page',
-      name: 'nextPage',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Next Page', name: 'nextPage', desc: '', args: []);
   }
 
   /// `PreviousPage`
@@ -72,42 +71,22 @@ class S {
 
   /// `Submit`
   String get submitSurvey {
-    return Intl.message(
-      'Submit',
-      name: 'submitSurvey',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Submit', name: 'submitSurvey', desc: '', args: []);
   }
 
   /// `Add`
   String get add {
-    return Intl.message(
-      'Add',
-      name: 'add',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Add', name: 'add', desc: '', args: []);
   }
 
   /// `Remove`
   String get remove {
-    return Intl.message(
-      'Remove',
-      name: 'remove',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Remove', name: 'remove', desc: '', args: []);
   }
 
   /// `Select...`
   String get placeholder {
-    return Intl.message(
-      'Select...',
-      name: 'placeholder',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Select...', name: 'placeholder', desc: '', args: []);
   }
 
   /// `Other (describe)`
@@ -122,12 +101,7 @@ class S {
 
   /// `None`
   String get noneItemText {
-    return Intl.message(
-      'None',
-      name: 'noneItemText',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('None', name: 'noneItemText', desc: '', args: []);
   }
 
   /// `Select All`
@@ -147,6 +121,7 @@ class AppLocalizationDelegate extends LocalizationsDelegate<S> {
   List<Locale> get supportedLocales {
     return const <Locale>[
       Locale.fromSubtags(languageCode: 'en'),
+      Locale.fromSubtags(languageCode: 'fa'),
       Locale.fromSubtags(languageCode: 'fr'),
       Locale.fromSubtags(languageCode: 'zh'),
     ];
