@@ -10,7 +10,8 @@ import 'package:flutter_survey_js/utils.dart';
 Widget defaultSurveyTitleBuilder(BuildContext context, s.Survey survey) {
   if (survey.title?.getLocalizedText(context) != null) {
     return ListTile(
-      title: Text(survey.title!.getLocalizedText(context)!),
+      title: Text(survey.title!.getLocalizedText(context)!,
+      textDirection: TextDirection.rtl,),
     );
   }
   return Container();
