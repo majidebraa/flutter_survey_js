@@ -10,10 +10,8 @@ import 'package:flutter_survey_js/utils.dart';
 Widget defaultSurveyTitleBuilder(BuildContext context, s.Survey survey) {
   if (survey.title?.getLocalizedText(context) != null) {
     return ListTile(
-      title: Text(
-        survey.title!.getLocalizedText(context)!,
-        textDirection: TextDirection.rtl,
-      ),
+      title: Text(survey.title!.getLocalizedText(context)!,
+      textDirection: TextDirection.rtl,),
     );
   }
   return Container();
@@ -23,6 +21,7 @@ Widget defaultStepperBuilder(
     BuildContext context, int pageCount, int currentPage) {
   if (pageCount > 1) {
     return DotStepper(
+      // direction: Axis.vertical,
       dotCount: pageCount,
       dotRadius: 12,
       activeStep: currentPage,
@@ -33,9 +32,8 @@ Widget defaultStepperBuilder(
         SurveyWidgetState.of(context).toPage(tappedDotIndex);
       },
       indicatorDecoration: IndicatorDecoration(
-        color: Theme.of(context).primaryColor,
-        strokeColor: Theme.of(context).primaryColor,
-      ),
+          color: Theme.of(context).primaryColor,
+          strokeColor: Theme.of(context).primaryColor),
     );
   }
   return Container();
@@ -43,25 +41,19 @@ Widget defaultStepperBuilder(
 
 class SurveyLayout extends StatefulWidget {
   final Widget Function(BuildContext context, s.Survey survey)?
-  surveyTitleBuilder;
+      surveyTitleBuilder;
   final Widget Function(BuildContext context, int pageCount, int currentPage)?
-  stepperBuilder;
+      stepperBuilder;
   final Widget Function(BuildContext context, s.Page page)? pageBuilder;
   final EdgeInsets? padding;
 
-  // ✅ new fields
-  final List<String>? outcomeTypes;
-  final void Function(String action, Map<String, Object?> data)? onAction;
-
-  const SurveyLayout({
-    Key? key,
-    this.surveyTitleBuilder,
-    this.stepperBuilder,
-    this.pageBuilder,
-    this.padding,
-    this.outcomeTypes,
-    this.onAction,
-  }) : super(key: key);
+  const SurveyLayout(
+      {Key? key,
+      this.surveyTitleBuilder,
+      this.stepperBuilder,
+      this.pageBuilder,
+      this.padding})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => SurveyLayoutState();
@@ -69,16 +61,24 @@ class SurveyLayout extends StatefulWidget {
 
 class SurveyLayoutState extends State<SurveyLayout> {
   final Logger logger = Logger('SurveyLayoutState');
+
   late PageController? pageController;
 
   s.Survey get survey => SurveyProvider.of(context).survey;
-  int get pageCount => survey.getPageCount();
+
+  int get pageCount {
+    return survey.getPageCount();
+  }
+
   int get currentPage => SurveyProvider.of(context).currentPage;
 
   @override
   void initState() {
-    pageController = PageController(keepPage: true);
+    pageController = PageController(
+      keepPage: true,
+    );
     pageController!.addListener(() {
+      //update parent state
       SurveyWidgetState.of(context).toPage(pageController!.page!.toInt());
     });
     super.initState();
@@ -91,14 +91,16 @@ class SurveyLayoutState extends State<SurveyLayout> {
   @override
   void didChangeDependencies() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = SurveyProvider.of(context);
-      if (provider.initialPage != pageController?.initialPage) {
-        pageController?.jumpToPage(provider.initialPage);
+      if (SurveyProvider.of(context).initialPage !=
+          pageController?.initialPage) {
+        pageController?.jumpToPage(SurveyProvider.of(context).initialPage);
       }
-      if (provider.currentPage != pageController?.page?.toInt()) {
-        pageController?.jumpToPage(provider.currentPage);
+      if (SurveyProvider.of(context).currentPage !=
+          pageController?.page?.toInt()) {
+        pageController?.jumpToPage(SurveyProvider.of(context).currentPage);
       }
     });
+
     super.didChangeDependencies();
   }
 
@@ -107,102 +109,42 @@ class SurveyLayoutState extends State<SurveyLayout> {
     final surveyWidgetState = SurveyWidgetState.of(context);
     final currentPage = surveyWidgetState.currentPage;
     final pages = reCalculatePages(survey);
-    final formData = surveyWidgetState.formGroup.value;
 
     final latestUnfinished = SurveyProvider.of(context)
         .rootNode
         .findByCondition((node) => node.isLatestUnfinishedQuestion == true);
-
     return Column(
       children: [
-        (widget.surveyTitleBuilder ?? defaultSurveyTitleBuilder)(
-            context, survey),
+        widget.surveyTitleBuilder != null
+            ? widget.surveyTitleBuilder!(context, survey)
+            : defaultSurveyTitleBuilder(context, survey),
         Expanded(
-          child: Padding(
-            padding: widget.padding ?? const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                (widget.stepperBuilder ?? defaultStepperBuilder)(
-                    context, pageCount, currentPage),
-                Expanded(
-                  child: buildPages(pages,
-                      intialPageIndex: latestUnfinished?.pageIndex,
-                      intialQuestionIndexInPage:
-                      latestUnfinished?.indexInPage ?? 0),
-                ),
+            child: Padding(
+          padding: widget.padding ?? const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              (widget.stepperBuilder ?? defaultStepperBuilder)(
+                  context, pageCount, currentPage),
 
-                // ✅ Replace bottom buttons with dynamic outcome buttons
-                if (widget.outcomeTypes?.isNotEmpty ?? false)
-                  _buildOutcomeButtons(formData)
-                else
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      if (currentPage != 0) previousButton(),
-                      nextButton(),
-                    ],
-                  ),
-              ],
-            ),
+              Expanded(
+                child: buildPages(pages,
+                    intialPageIndex: latestUnfinished?.pageIndex,
+                    intialQuestionIndexInPage:
+                        latestUnfinished?.indexInPage ?? 0),
+              ),
+              // Next and Previous buttons.
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (currentPage != 0) previousButton(),
+                  nextButton()
+                ],
+              )
+            ],
           ),
-        ),
+        ))
       ],
-    );
-  }
-
-  Widget _buildOutcomeButtons(Map<String, Object?> data) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      children: [
-        for (final action in widget.outcomeTypes!) _buildActionButton(action, data),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(String action, Map<String, Object?> data) {
-    Color color;
-    IconData icon;
-    switch (action.toUpperCase()) {
-      case 'SUBMIT':
-      case 'OK':
-      case 'COMPLETED':
-        color = Colors.green;
-        icon = Icons.check;
-        break;
-      case 'REJECT':
-      case 'NO':
-        color = Colors.red;
-        icon = Icons.close;
-        break;
-      case 'APPROVE':
-        color = Colors.blue;
-        icon = Icons.thumb_up;
-        break;
-      case 'DEFER':
-        color = Colors.orange;
-        icon = Icons.pause_circle;
-        break;
-      case 'SENDTOEXPORT':
-        color = Colors.purple;
-        icon = Icons.upload;
-        break;
-      default:
-        color = Colors.grey;
-        icon = Icons.circle;
-    }
-
-    return ElevatedButton.icon(
-      icon: Icon(icon, size: 18),
-      label: Text(action),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-      ),
-      onPressed: () {
-        widget.onAction?.call(action, data);
-      },
     );
   }
 
@@ -210,14 +152,15 @@ class SurveyLayoutState extends State<SurveyLayout> {
       {int? intialPageIndex, int intialQuestionIndexInPage = 0}) {
     Widget itemBuilder(BuildContext context, int index) {
       final currentPage = pages[index];
+      //build elements
       return widget.pageBuilder != null
           ? widget.pageBuilder!(context, currentPage)
           : SurveyPageWidget(
-        page: currentPage,
-        initIndex:
-        (intialPageIndex == index) ? intialQuestionIndexInPage : 0,
-        key: ObjectKey(index),
-      );
+              page: currentPage,
+              initIndex:
+                  (intialPageIndex == index) ? intialQuestionIndexInPage : 0,
+              key: ObjectKey(index),
+            );
     }
 
     return PageView.builder(
@@ -228,17 +171,19 @@ class SurveyLayoutState extends State<SurveyLayout> {
     );
   }
 
+  /// Returns the next button widget.
   Widget nextButton() {
     final bool finished = currentPage >= pageCount - 1;
     return ElevatedButton(
       child:
-      Text(finished ? S.of(context).submitSurvey : S.of(context).nextPage),
+          Text(finished ? S.of(context).submitSurvey : S.of(context).nextPage),
       onPressed: () {
         SurveyWidgetState.of(context).nextPageOrSubmit();
       },
     );
   }
 
+  /// Returns the previous button widget.
   Widget previousButton() {
     return ElevatedButton(
       child: Text(S.of(context).previousPage),
