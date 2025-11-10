@@ -67,7 +67,7 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     RouteSettings? timePickerRouteSettings,
 
     // 🆕 Jalali support
-    bool usePersianCalendar = false,
+    bool usePersianCalendar = true,
   }) : super(
     key: key,
     formControl: formControl,
