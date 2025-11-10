@@ -5,6 +5,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
+import '../jalali_date_picker/jalali_date_picker_dialog.dart';
+import '../extension/jalali_extensions.dart';
+
 enum ReactiveDatePickerFieldType {
   date,
   time,
@@ -63,8 +66,8 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     TimePickerEntryMode timePickerEntryMode = TimePickerEntryMode.dial,
     RouteSettings? timePickerRouteSettings,
 
-    // new option
-    bool usePersianCalendar = true,
+    // 🆕 Jalali support
+    bool usePersianCalendar = false,
   }) : super(
     key: key,
     formControl: formControl,
@@ -92,6 +95,7 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
       (decoration ?? const InputDecoration())
           .applyDefaults(Theme.of(field.context).inputDecorationTheme)
           .copyWith(suffixIcon: suffixIcon);
+
       final effectiveValueAccessor =
       _effectiveValueAccessor(type, dateFormat);
       final effectiveLastDate = lastDate ?? DateTime(2100);
@@ -110,25 +114,27 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
               final fieldDatetimeValue =
               field.control.value.tryCastToDateTime();
 
-              // Persian calendar mode
               if (usePersianCalendar &&
                   (type == ReactiveDatePickerFieldType.date ||
                       type == ReactiveDatePickerFieldType.dateTime)) {
-                // show a simple AlertDialog picker using shamsi_date
-                final now = Jalali.now();
-                final initial = fieldDatetimeValue != null
+                // Convert to Jalali for dialog
+                final initialJalali = fieldDatetimeValue != null
                     ? Gregorian.fromDateTime(fieldDatetimeValue).toJalali()
-                    : now;
+                    : Jalali.now();
 
-                final picked = await _showSimplePersianPicker(
-                    field.context, initial);
+                // 🗓 Show your custom Jalali picker
+                final Jalali? picked = await showDialog<Jalali>(
+                  context: field.context,
+                  builder: (ctx) => JalaliDatePickerDialog(
+                    initialDate: initialJalali,
+                  ),
+                );
 
                 if (picked != null) {
                   date = picked.toDateTime();
                 }
               } else if (type == ReactiveDatePickerFieldType.date ||
                   type == ReactiveDatePickerFieldType.dateTime) {
-                // Gregorian (default) date picker
                 date = await showDatePicker(
                   context: field.context,
                   initialDate: (getInitialDate ?? _getInitialDate)(
@@ -201,12 +207,35 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
               ),
               isFocused: field.control.hasFocus,
               isEmpty: isEmptyValue,
-              child: Text(
-                field.value ?? '',
-                style: Theme.of(field.context)
-                    .textTheme
-                    .titleMedium
-                    ?.merge(style),
+              child: Builder(
+                builder: (ctx) {
+                  if (field.value == null || field.value!.isEmpty) {
+                    return const Text('');
+                  }
+
+                  final date = field.value!.tryCastToDateTime();
+                  if (date == null) return Text(field.value!);
+
+                  // Show Jalali formatted date if Persian mode is active
+                  if (usePersianCalendar) {
+                    final j = Gregorian.fromDateTime(date).toJalali();
+                    return Text(j.formatFullDate(),
+                        style: Theme.of(ctx)
+                            .textTheme
+                            .titleMedium
+                            ?.merge(style));
+                  }
+
+                  // Otherwise, show formatted Gregorian date
+                  return Text(
+                    (dateFormat ?? DateFormat('yyyy-MM-dd'))
+                        .format(date),
+                    style: Theme.of(ctx)
+                        .textTheme
+                        .titleMedium
+                        ?.merge(style),
+                  );
+                },
               ),
             ),
           ),
@@ -215,44 +244,7 @@ class ReactiveDateTimePicker extends ReactiveFormField<String, String> {
     },
   );
 
-  // Simple Persian date picker (for demo; you can replace with a full widget later)
-  static Future<Jalali?> _showSimplePersianPicker(
-      BuildContext context, Jalali initial) async {
-    Jalali selected = initial;
-    return showDialog<Jalali>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('انتخاب تاریخ شمسی'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                  '${selected.year}/${selected.month.toString().padLeft(2, '0')}/${selected.day.toString().padLeft(2, '0')}'),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop(Jalali.now());
-                },
-                child: const Text('امروز'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('لغو'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, selected),
-              child: const Text('تأیید'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  // Helpers
   static DateTimeValueAccessor _effectiveValueAccessor(
       ReactiveDatePickerFieldType fieldType, DateFormat? dateFormat) {
     switch (fieldType) {
