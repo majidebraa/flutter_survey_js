@@ -126,9 +126,10 @@ class SurveyLayoutState extends State<SurveyLayout> {
                       intialQuestionIndexInPage:
                       latestUnfinished?.indexInPage ?? 0),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     cancelButton(),
                     rejectButton(),
