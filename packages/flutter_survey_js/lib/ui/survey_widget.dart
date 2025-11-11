@@ -19,6 +19,8 @@ class SurveyWidget extends StatefulWidget {
   final FutureOr<void> Function(dynamic data)? onSubmit;
   final FutureOr<void> Function(dynamic data)? onErrors;
   final ValueSetter<Map<String, Object?>?>? onChange;
+  final FutureOr<void> Function()? onCancel;
+  final FutureOr<void> Function()? onReject;
 
   final SurveyController? controller;
   final WidgetBuilder? builder;
@@ -31,6 +33,8 @@ class SurveyWidget extends StatefulWidget {
     this.onSubmit,
     this.onErrors,
     this.onChange,
+    this.onCancel,
+    this.onReject,
     this.controller,
     this.builder,
     this.removingEmptyFields = true,
@@ -79,37 +83,36 @@ class SurveyWidgetState extends State<SurveyWidget> {
   @override
   Widget build(BuildContext context) {
     return SurveyConfiguration.copyAncestor(
-        context: context,
-        child: ReactiveForm(
-          formGroup: formGroup,
-          child: StreamBuilder(
-            stream: formGroup.valueChanges,
-            builder: (BuildContext context,
-                AsyncSnapshot<Map<String, Object?>?> snapshot) {
-              return SurveyProvider(
-                survey: widget.survey,
-                formGroup: formGroup,
-                rootNode: rootNode,
-                currentPage: currentPage,
-                initialPage: initialPage,
-                child: Builder(
-                    builder: (context) =>
-                        (widget.builder ?? defaultBuilder)(context)),
-              );
-            },
-          ),
-        ));
+      context: context,
+      child: ReactiveForm(
+        formGroup: formGroup,
+        child: StreamBuilder(
+          stream: formGroup.valueChanges,
+          builder: (BuildContext context,
+              AsyncSnapshot<Map<String, Object?>?> snapshot) {
+            return SurveyProvider(
+              survey: widget.survey,
+              formGroup: formGroup,
+              rootNode: rootNode,
+              currentPage: currentPage,
+              initialPage: initialPage,
+              child: Builder(
+                  builder: (context) =>
+                      (widget.builder ?? defaultBuilder)(context)),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   void rerunExpression(Map<String, Object?> values) {
-    // final properties = ExpressionHelper.getInitalProperty(widget.survey);
     rootNode.runExpression(values, {});
   }
 
   void rebuildForm() {
     logger.fine("Rebuild form");
     _listener?.cancel();
-    //clear
     _currentPage = 0;
     rootNode = ElementNode(
         element: null,
@@ -141,6 +144,14 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
+  void cancel() {
+    widget.onCancel?.call();
+  }
+
+  void reject() {
+    widget.onReject?.call();
+  }
+
   @override
   void dispose() {
     _listener?.cancel();
@@ -164,7 +175,6 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
-  // nextPageOrSubmit return true if submit or return false for next page
   bool nextPageOrSubmit() {
     final bool finished = _currentPage >= pageCount - 1;
     if (!finished) {
@@ -203,7 +213,6 @@ class SurveyProvider extends InheritedWidget {
   bool updateShouldNotify(covariant SurveyProvider oldWidget) => true;
 }
 
-// SurveyController use to control SurveyWidget behavior
 class SurveyController {
   SurveyWidgetState? _widgetState;
 
@@ -219,7 +228,7 @@ class SurveyController {
 
   void _bind(SurveyWidgetState state) {
     assert(_widgetState == null,
-        "Don't use one SurveyController to multiple SurveyWidget");
+    "Don't use one SurveyController to multiple SurveyWidget");
     _widgetState = state;
   }
 
@@ -232,7 +241,16 @@ class SurveyController {
     return _widgetState!.submit();
   }
 
-  // nextPageOrSubmit return true if submit or return false for next page
+  void cancel() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.cancel();
+  }
+
+  void reject() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.reject();
+  }
+
   bool nextPageOrSubmit() {
     assert(_widgetState != null, "SurveyWidget not initialized");
     return _widgetState!.nextPageOrSubmit();
