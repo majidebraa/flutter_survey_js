@@ -1,11 +1,13 @@
 {
-  "nextPage": "Next Page",
-  "previousPage": "PreviousPage",
-  "submitSurvey": "Submit",
-  "add": "Add",
-  "remove": "Remove",
-  "placeholder": "Select...",
-  "otherItemText": "Other (describe)",
-  "noneItemText": "None",
-  "selectAllText": "Select All"
+  "nextPage": "صفحه بعدی",
+  "previousPage": "صفحه قبلی",
+  "submitSurvey": "تایید",
+  "add": "اضافه کردن",
+  "remove": "پاک کردن",
+  "placeholder": "انتخاب کنید",
+  "otherItemText": "دیگر(توضیح دهید)",
+  "noneItemText": "هیچکدام",
+  "selectAllText": "انتخاب همه",
+  "reject": "رد",
+  "cancel": "لغو"
 }
