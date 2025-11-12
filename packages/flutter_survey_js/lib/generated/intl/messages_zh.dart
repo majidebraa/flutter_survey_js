@@ -22,14 +22,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-    "add": MessageLookupByLibrary.simpleMessage("添加"),
-    "nextPage": MessageLookupByLibrary.simpleMessage("下一页"),
-    "noneItemText": MessageLookupByLibrary.simpleMessage("无"),
-    "otherItemText": MessageLookupByLibrary.simpleMessage("填写其他答案"),
-    "placeholder": MessageLookupByLibrary.simpleMessage("请选择..."),
-    "previousPage": MessageLookupByLibrary.simpleMessage("上一页"),
-    "remove": MessageLookupByLibrary.simpleMessage("删除"),
-    "selectAllText": MessageLookupByLibrary.simpleMessage("全选"),
-    "submitSurvey": MessageLookupByLibrary.simpleMessage("提交"),
+    "add": MessageLookupByLibrary.simpleMessage("اضافه کردن"),
+    "cancel": MessageLookupByLibrary.simpleMessage("لغو"),
+    "nextPage": MessageLookupByLibrary.simpleMessage("صفحه بعدی"),
+    "noneItemText": MessageLookupByLibrary.simpleMessage("هیچکدام"),
+    "otherItemText": MessageLookupByLibrary.simpleMessage("دیگر(توضیح دهید)"),
+    "placeholder": MessageLookupByLibrary.simpleMessage("انتخاب کنید"),
+    "previousPage": MessageLookupByLibrary.simpleMessage("صفحه قبلی"),
+    "reject": MessageLookupByLibrary.simpleMessage("رد"),
+    "remove": MessageLookupByLibrary.simpleMessage("پاک کردن"),
+    "selectAllText": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
+    "submitSurvey": MessageLookupByLibrary.simpleMessage("تایید"),
   };
 }

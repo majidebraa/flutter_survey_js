@@ -7,5 +7,7 @@
   "placeholder": "انتخاب کنید",
   "otherItemText": "دیگر(توضیح دهید)",
   "noneItemText": "هیچکدام",
-  "selectAllText": "انتخاب همه"
+  "selectAllText": "انتخاب همه",
+  "reject": "رد",
+  "cancel": "لغو"
 }

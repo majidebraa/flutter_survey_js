@@ -54,64 +54,69 @@ class S {
     return Localizations.of<S>(context, S);
   }
 
-  /// `Next Page`
+  /// `صفحه بعدی`
   String get nextPage {
-    return Intl.message('Next Page', name: 'nextPage', desc: '', args: []);
+    return Intl.message('صفحه بعدی', name: 'nextPage', desc: '', args: []);
   }
 
-  /// `PreviousPage`
+  /// `صفحه قبلی`
   String get previousPage {
-    return Intl.message(
-      'PreviousPage',
-      name: 'previousPage',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('صفحه قبلی', name: 'previousPage', desc: '', args: []);
   }
 
-  /// `Submit`
+  /// `تایید`
   String get submitSurvey {
-    return Intl.message('Submit', name: 'submitSurvey', desc: '', args: []);
+    return Intl.message('تایید', name: 'submitSurvey', desc: '', args: []);
   }
 
-  /// `Add`
+  /// `اضافه کردن`
   String get add {
-    return Intl.message('Add', name: 'add', desc: '', args: []);
+    return Intl.message('اضافه کردن', name: 'add', desc: '', args: []);
   }
 
-  /// `Remove`
+  /// `پاک کردن`
   String get remove {
-    return Intl.message('Remove', name: 'remove', desc: '', args: []);
+    return Intl.message('پاک کردن', name: 'remove', desc: '', args: []);
   }
 
-  /// `Select...`
+  /// `انتخاب کنید`
   String get placeholder {
-    return Intl.message('Select...', name: 'placeholder', desc: '', args: []);
+    return Intl.message('انتخاب کنید', name: 'placeholder', desc: '', args: []);
   }
 
-  /// `Other (describe)`
+  /// `دیگر(توضیح دهید)`
   String get otherItemText {
     return Intl.message(
-      'Other (describe)',
+      'دیگر(توضیح دهید)',
       name: 'otherItemText',
       desc: '',
       args: [],
     );
   }
 
-  /// `None`
+  /// `هیچکدام`
   String get noneItemText {
-    return Intl.message('None', name: 'noneItemText', desc: '', args: []);
+    return Intl.message('هیچکدام', name: 'noneItemText', desc: '', args: []);
   }
 
-  /// `Select All`
+  /// `انتخاب همه`
   String get selectAllText {
     return Intl.message(
-      'Select All',
+      'انتخاب همه',
       name: 'selectAllText',
       desc: '',
       args: [],
     );
+  }
+
+  /// `رد`
+  String get reject {
+    return Intl.message('رد', name: 'reject', desc: '', args: []);
+  }
+
+  /// `لغو`
+  String get cancel {
+    return Intl.message('لغو', name: 'cancel', desc: '', args: []);
   }
 }
 

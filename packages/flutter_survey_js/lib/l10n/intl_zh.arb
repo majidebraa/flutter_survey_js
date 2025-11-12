@@ -1,11 +1,13 @@
 {
-  "nextPage": "下一页",
-  "previousPage": "上一页",
-  "submitSurvey": "提交",
-  "add": "添加",
-  "remove": "删除",
-  "placeholder": "请选择...",
-  "otherItemText": "填写其他答案",
-  "noneItemText": "无",
-  "selectAllText": "全选"
+  "nextPage": "صفحه بعدی",
+  "previousPage": "صفحه قبلی",
+  "submitSurvey": "تایید",
+  "add": "اضافه کردن",
+  "remove": "پاک کردن",
+  "placeholder": "انتخاب کنید",
+  "otherItemText": "دیگر(توضیح دهید)",
+  "noneItemText": "هیچکدام",
+  "selectAllText": "انتخاب همه",
+  "reject": "رد",
+  "cancel": "لغو"
 }
