@@ -193,7 +193,7 @@ class SurveyLayoutState extends State<SurveyLayout> {
       onPressed: () {
         SurveyWidgetState.of(context).cancel();
       },
-      child: const Text("Cancel"),
+      child:  Text(S.of(context).cancel),
     );
   }
 
@@ -203,7 +203,7 @@ class SurveyLayoutState extends State<SurveyLayout> {
       onPressed: () {
         SurveyWidgetState.of(context).reject();
       },
-      child: const Text("Reject"),
+      child:  Text(S.of(context).reject),
     );
   }
 
