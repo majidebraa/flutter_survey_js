@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_survey_js/ui/constant/app_colors.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -107,8 +108,8 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
             WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
           },
           child: Container(
-            padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-            color: Colors.white,
+            padding: const EdgeInsets.only(left: 0.0, right: 0.0),
+            color: AppColors.whiteColor,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
@@ -135,10 +136,9 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
                     itemBuilder: (context, index) {
                       if (index < widget.page.getElements().length &&
                           index >= 0) {
-                        final elementWidget =  SurveyConfiguration.of(context)!.factory.resolve(
-                            context,
-                            widget
-                                .page.getElements()[index]);
+                        final elementWidget = SurveyConfiguration.of(context)!
+                            .factory
+                            .resolve(context, widget.page.getElements()[index]);
                         return Directionality(
                           textDirection: TextDirection.rtl,
                           child: elementWidget,
