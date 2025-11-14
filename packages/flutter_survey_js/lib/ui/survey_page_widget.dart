@@ -87,6 +87,7 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: AppColors.transparentColor,
         floatingActionButton: _showBackToTopButton == false
             ? null
             : SizedBox(
@@ -109,7 +110,7 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
           },
           child: Container(
             padding: const EdgeInsets.only(left: 0.0, right: 0.0),
-            color: AppColors.whiteColor,
+            //color: AppColors.whiteColor,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
