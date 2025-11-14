@@ -7,13 +7,13 @@ Widget buildDecoratedElement(Widget child) {
       decoration: BoxDecoration(
         color: Colors.white, // background color
         borderRadius: BorderRadius.circular(12), // corner radius
-        boxShadow: const [
+        /*boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 4,
             offset: Offset(0, 2),
           ),
-        ],
+        ],*/
       ),
       padding: const EdgeInsets.all(12), // inner padding
       child: child,
