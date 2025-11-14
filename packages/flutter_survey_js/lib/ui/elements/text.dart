@@ -22,7 +22,9 @@ Widget textBuilder(BuildContext context, s.Elementbase element,
       fillColor: AppColors.whiteColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.primaryColor),
+        borderSide: BorderSide(
+          color: Theme.of(context).primaryColor,
+        ),
       ),
     ),
   );
