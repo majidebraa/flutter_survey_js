@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/ui/constant/app_colors.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
+import 'package:flutter_survey_js/ui/survey_decorators.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -142,7 +143,7 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
                             .resolve(context, widget.page.getElements()[index]);
                         return Directionality(
                           textDirection: TextDirection.rtl,
-                          child: elementWidget,
+                          child: buildDecoratedElement(elementWidget),
                         );
                       } else {
                         return const SizedBox.shrink();
