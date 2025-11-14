@@ -4,11 +4,9 @@ import 'package:flutter_survey_js/ui/reactive/reactive.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_color_picker.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_date_time_picker.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
-import 'package:flutter_survey_js/utils.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
-
-import '../constant/app_colors.dart';
+import 'package:flutter_survey_js/utils.dart';
 
 Widget textBuilder(BuildContext context, s.Elementbase element,
     {ElementConfiguration? configuration}) {
@@ -16,15 +14,7 @@ Widget textBuilder(BuildContext context, s.Elementbase element,
   final String? hintText = e.placeholder?.getLocalizedText(context);
   Widget widget = ReactiveTextField(
     formControlName: element.name!,
-    decoration: InputDecoration(
-      hintText: hintText,
-      filled: true,
-      fillColor: AppColors.whiteColor,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.primaryColor),
-      ),
-    ),
+    decoration: InputDecoration(hintText: hintText),
   );
 
   if (e.inputType == s.TextInputType.date) {
