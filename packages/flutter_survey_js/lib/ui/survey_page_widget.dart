@@ -109,8 +109,8 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
             WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
           },
           child: Container(
-            padding: const EdgeInsets.only(left: 0.0, right: 0.0),
-            //color: AppColors.whiteColor,
+            padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+            color: AppColors.transparentColor,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
