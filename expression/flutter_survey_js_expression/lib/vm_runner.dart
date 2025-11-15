@@ -50,8 +50,12 @@ class VMRunner implements Runner {
   @override
   Object? runExpression(String expression, Map<String, Object?> value,
       {Map<String, Object?>? properties}) {
+    if (jsRuntime == null) {
+      throw Exception(
+          "JS runtime is not initialized. Call Runner.init() before using runExpression.");
+    }
     final exp =
-        '''surveyjs.runExpression("$expression","${escape(json.encode(value))}")''';
+    '''surveyjs.runExpression("$expression","${escape(json.encode(value))}")''';
     final jsResult = jsRuntime!.evaluate(exp);
     if (jsResult.isError) {
       throw Exception(jsResult.rawResult);
