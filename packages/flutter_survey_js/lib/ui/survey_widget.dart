@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/flutter_survey_js.dart';
+import 'package:flutter_survey_js_expression/stub.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:logging/logging.dart';
 import 'package:reactive_forms/reactive_forms.dart';
@@ -63,11 +64,31 @@ class SurveyWidgetState extends State<SurveyWidget> {
   FormGroup get formGroup => rootNode.control as FormGroup;
 
   @override
+  @override
   void initState() {
     super.initState();
     widget.controller?._bind(this);
-    rebuildForm();
+
+    // Ensure JS runtime is initialized before building the form
+    // We do not make initState async; initialize then rebuild the form.
+    s.getRunner().init().then((_) {
+      // runtime ready, now build the form
+      if (mounted) {
+        setState(() {
+          rebuildForm();
+        });
+      }
+    }).catchError((error, stack) {
+      logger.severe("Failed to init JS runner: $error", error, stack);
+      // still try to rebuildForm so UI shows something (optional)
+      if (mounted) {
+        setState(() {
+          rebuildForm();
+        });
+      }
+    });
   }
+
 
   static SurveyWidgetState of(BuildContext context) {
     return context.findAncestorStateOfType<SurveyWidgetState>()!;
