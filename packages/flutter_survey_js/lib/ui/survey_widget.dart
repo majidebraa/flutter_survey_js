@@ -19,8 +19,19 @@ class SurveyWidget extends StatefulWidget {
   final FutureOr<void> Function(dynamic data)? onSubmit;
   final FutureOr<void> Function(dynamic data)? onErrors;
   final ValueSetter<Map<String, Object?>?>? onChange;
+
+  /// cancel/reject kept as no-arg callbacks (existing behavior)
   final FutureOr<void> Function()? onCancel;
   final FutureOr<void> Function()? onReject;
+
+  /// Workflow callbacks that accept payload (cleaned form data)
+  final FutureOr<void> Function(dynamic data)? onApprove;
+  final FutureOr<void> Function(dynamic data)? onNo;
+  final FutureOr<void> Function(dynamic data)? onOK;
+  final FutureOr<void> Function(dynamic data)? onCompleted;
+  final FutureOr<void> Function(dynamic data)? onAccept;
+  final FutureOr<void> Function(dynamic data)? onDefer;
+  final FutureOr<void> Function(dynamic data)? onSendToExpert;
 
   final SurveyController? controller;
   final WidgetBuilder? builder;
@@ -35,6 +46,13 @@ class SurveyWidget extends StatefulWidget {
     this.onChange,
     this.onCancel,
     this.onReject,
+    this.onApprove,
+    this.onNo,
+    this.onOK,
+    this.onCompleted,
+    this.onAccept,
+    this.onDefer,
+    this.onSendToExpert,
     this.controller,
     this.builder,
     this.removingEmptyFields = true,
@@ -152,6 +170,49 @@ class SurveyWidgetState extends State<SurveyWidget> {
     widget.onReject?.call();
   }
 
+  // --- NEW workflow actions (send cleaned form data) ---
+  void approve() {
+    widget.onApprove?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void no() {
+    widget.onNo?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void ok() {
+    widget.onOK?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void completed() {
+    widget.onCompleted?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void accept() {
+    widget.onAccept?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void defer() {
+    widget.onDefer?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
+  void sendToExpert() {
+    widget.onSendToExpert?.call(widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value);
+  }
+
   @override
   void dispose() {
     _listener?.cancel();
@@ -227,10 +288,13 @@ class SurveyController {
   }
 
   void _bind(SurveyWidgetState state) {
-    assert(_widgetState == null,
+    assert(_widget_state_null_check(), // defensive assert helper below
     "Don't use one SurveyController to multiple SurveyWidget");
     _widgetState = state;
   }
+
+  // small helper to keep analyzer happy in assert message
+  bool _widget_state_null_check() => _widgetState == null;
 
   void _detach() {
     _widgetState = null;
@@ -249,6 +313,42 @@ class SurveyController {
   void reject() {
     assert(_widgetState != null, "SurveyWidget not initialized");
     _widgetState!.reject();
+  }
+
+  // --- NEW controller helpers for workflow actions ---
+  void approve() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.approve();
+  }
+
+  void no() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.no();
+  }
+
+  void ok() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.ok();
+  }
+
+  void completed() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.completed();
+  }
+
+  void accept() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.accept();
+  }
+
+  void defer() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.defer();
+  }
+
+  void sendToExpert() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    _widgetState!.sendToExpert();
   }
 
   bool nextPageOrSubmit() {

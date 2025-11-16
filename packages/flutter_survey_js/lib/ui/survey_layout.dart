@@ -10,10 +10,10 @@ import 'package:flutter_survey_js/utils.dart';
 Widget defaultSurveyTitleBuilder(BuildContext context, s.Survey survey) {
   if (survey.title?.getLocalizedText(context) != null) {
     return ListTile(
-      title: Text(survey.title!.getLocalizedText(context)!,
+      title: Text(
+        survey.title!.getLocalizedText(context)!,
         textDirection: TextDirection.rtl,
       ),
-
     );
   }
   return Container();
@@ -131,11 +131,43 @@ class SurveyLayoutState extends State<SurveyLayout> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    // Cancel / Reject keep existing behavior (no payload)
                     if (SurveyWidgetState.of(context).widget.onCancel != null)
                       cancelButton(),
 
                     if (SurveyWidgetState.of(context).widget.onReject != null)
                       rejectButton(),
+
+                    // Workflow buttons (preset A) — each appears only if callback provided.
+                    if (SurveyWidgetState.of(context).widget.onSubmit != null)
+                      submitActionButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onNo != null)
+                      noButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onApprove != null)
+                      approveButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onErrors != null)
+                    /* reuse onErrors as REJECT workflow? */
+                      rejectWorkflowButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onOK != null)
+                      okButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onCompleted != null)
+                      completedButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onAccept != null)
+                      acceptButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onDefer != null)
+                      deferButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onSendToExpert !=
+                        null)
+                      sendToExpertButton(),
+
                     if (currentPage != 0) previousButton(),
                     nextButton(),
                   ],
@@ -173,8 +205,7 @@ class SurveyLayoutState extends State<SurveyLayout> {
   Widget nextButton() {
     final bool finished = currentPage >= pageCount - 1;
     return ElevatedButton(
-      child:
-      Text(finished ? S.of(context).submitSurvey : S.of(context).nextPage),
+      child: Text(finished ? S.of(context).submitSurvey : S.of(context).nextPage),
       onPressed: () {
         SurveyWidgetState.of(context).nextPageOrSubmit();
       },
@@ -190,13 +221,34 @@ class SurveyLayoutState extends State<SurveyLayout> {
     );
   }
 
+  // Helper to render action buttons consistently
+  Widget actionButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+    );
+  }
+
+  // Existing Cancel / Reject (no payload)
   Widget cancelButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
       onPressed: () {
         SurveyWidgetState.of(context).cancel();
       },
-      child:  Text(S.of(context).cancel),
+      child: Text(S.of(context).cancel),
     );
   }
 
@@ -206,7 +258,91 @@ class SurveyLayoutState extends State<SurveyLayout> {
       onPressed: () {
         SurveyWidgetState.of(context).reject();
       },
-      child:  Text(S.of(context).reject),
+      child: Text(S.of(context).reject),
+    );
+  }
+
+  // --- New workflow buttons (call state methods that pass cleaned form data) ---
+
+  Widget submitActionButton() {
+    return actionButton(
+      label: "ثبت و ارسال",
+      icon: Icons.send,
+      color: Colors.green,
+      onPressed: () => SurveyWidgetState.of(context).submit(),
+    );
+  }
+
+  Widget noButton() {
+    return actionButton(
+      label: "انصراف از درخواست",
+      icon: Icons.delete_forever,
+      color: Colors.deepOrange,
+      onPressed: () => SurveyWidgetState.of(context).no(),
+    );
+  }
+
+  Widget approveButton() {
+    return actionButton(
+      label: "تایید",
+      icon: Icons.check_circle,
+      color: Colors.blue,
+      onPressed: () => SurveyWidgetState.of(context).approve(),
+    );
+  }
+
+  // I reused onErrors presence as a fallback to show a REJECT workflow button if you wired it that way.
+  Widget rejectWorkflowButton() {
+    return actionButton(
+      label: "عدم تایید",
+      icon: Icons.cancel,
+      color: Colors.red.shade700,
+      onPressed: () => SurveyWidgetState.of(context).reject(),
+    );
+  }
+
+  Widget okButton() {
+    return actionButton(
+      label: "مشاهده شد",
+      icon: Icons.visibility,
+      color: Colors.indigo,
+      onPressed: () => SurveyWidgetState.of(context).ok(),
+    );
+  }
+
+  Widget completedButton() {
+    return actionButton(
+      label: "تکمیل فرآیند",
+      icon: Icons.done_all,
+      color: Colors.teal,
+      onPressed: () => SurveyWidgetState.of(context).completed(),
+    );
+  }
+
+  Widget acceptButton() {
+    return actionButton(
+      label: "قبول",
+      icon: Icons.thumb_up_alt,
+      color: Colors.green.shade700,
+      onPressed: () => SurveyWidgetState.of(context).accept(),
+    );
+  }
+
+  Widget deferButton() {
+    return actionButton(
+      label: "بازگشت جهت اصلاح",
+      icon: Icons.undo,
+      color: Colors.amber.shade800,
+      onPressed: () => SurveyWidgetState.of(context).defer(),
+    );
+  }
+
+  Widget sendToExpertButton() {
+    return actionButton(
+      label: "ارسال جهت کارشناسی",
+      icon: Icons.engineering,
+      color: Colors.purple,
+      onPressed: () => SurveyWidgetState.of(context).sendToExpert(),
     );
   }
 
