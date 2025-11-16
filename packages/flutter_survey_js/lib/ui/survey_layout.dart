@@ -131,8 +131,11 @@ class SurveyLayoutState extends State<SurveyLayout> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    cancelButton(),
-                    rejectButton(),
+                    if (SurveyWidgetState.of(context).widget.onCancel != null)
+                      cancelButton(),
+
+                    if (SurveyWidgetState.of(context).widget.onReject != null)
+                      rejectButton(),
                     if (currentPage != 0) previousButton(),
                     nextButton(),
                   ],
