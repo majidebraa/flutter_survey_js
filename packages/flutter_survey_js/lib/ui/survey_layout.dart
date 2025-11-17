@@ -131,16 +131,9 @@ class SurveyLayoutState extends State<SurveyLayout> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    // Cancel / Reject keep existing behavior (no payload)
-                    if (SurveyWidgetState.of(context).widget.onCancel != null)
-                      cancelButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onReject != null)
-                      rejectButton(),
-
                     // Workflow buttons (preset A) — each appears only if callback provided.
-                    if (SurveyWidgetState.of(context).widget.onSubmit != null)
-                      submitActionButton(),
+                    /*if (SurveyWidgetState.of(context).widget.onSubmit != null)
+                      submitActionButton(),*/
 
                     if (SurveyWidgetState.of(context).widget.onNo != null)
                       noButton(),
@@ -205,7 +198,7 @@ class SurveyLayoutState extends State<SurveyLayout> {
   Widget nextButton() {
     final bool finished = currentPage >= pageCount - 1;
     return ElevatedButton(
-      child: Text(finished ? S.of(context).submitSurvey : S.of(context).nextPage),
+      child: finished ? submitActionButton() : Text(S.of(context).nextPage),
       onPressed: () {
         SurveyWidgetState.of(context).nextPageOrSubmit();
       },
@@ -241,26 +234,6 @@ class SurveyLayoutState extends State<SurveyLayout> {
     );
   }
 
-  // Existing Cancel / Reject (no payload)
-  Widget cancelButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-      onPressed: () {
-        SurveyWidgetState.of(context).cancel();
-      },
-      child: Text(S.of(context).cancel),
-    );
-  }
-
-  Widget rejectButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-      onPressed: () {
-        SurveyWidgetState.of(context).reject();
-      },
-      child: Text(S.of(context).reject),
-    );
-  }
 
   // --- New workflow buttons (call state methods that pass cleaned form data) ---
 
