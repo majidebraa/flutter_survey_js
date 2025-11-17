@@ -132,8 +132,8 @@ class SurveyLayoutState extends State<SurveyLayout> {
                   runSpacing: 8,
                   children: [
                     // Workflow buttons (preset A) — each appears only if callback provided.
-                    /*if (SurveyWidgetState.of(context).widget.onSubmit != null)
-                      submitActionButton(),*/
+                    if (SurveyWidgetState.of(context).widget.onSubmit != null)
+                      submitActionButton(),
 
                     if (SurveyWidgetState.of(context).widget.onNo != null)
                       noButton(),
@@ -197,21 +197,35 @@ class SurveyLayoutState extends State<SurveyLayout> {
 
   Widget nextButton() {
     final bool finished = currentPage >= pageCount - 1;
+
+    return actionButton(
+      label: finished ? /*S.of(context).submitSurvey*/ "بازگشت" : S.of(context).nextPage,
+      icon: Icons.exit_to_app,
+      color: Colors.blueGrey,
+      onPressed: () => SurveyWidgetState.of(context).nextPageOrBack(),
+    );
+
     return ElevatedButton(
-      child: finished ? submitActionButton() : Text(S.of(context).nextPage),
+      child: Text(finished ? /*S.of(context).submitSurvey*/ "بازگشت" : S.of(context).nextPage),
       onPressed: () {
-        SurveyWidgetState.of(context).nextPageOrSubmit();
+        SurveyWidgetState.of(context).nextPageOrBack();
       },
     );
   }
 
   Widget previousButton() {
-    return ElevatedButton(
+    return actionButton(
+      label: S.of(context).previousPage,
+      icon: Icons.skip_previous,
+      color: Colors.blueGrey,
+      onPressed: () => toPage(currentPage - 1),
+    );
+    /*return ElevatedButton(
       child: Text(S.of(context).previousPage),
       onPressed: () {
         toPage(currentPage - 1);
       },
-    );
+    );*/
   }
 
   // Helper to render action buttons consistently

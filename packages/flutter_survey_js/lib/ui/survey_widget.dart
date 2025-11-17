@@ -32,6 +32,7 @@ class SurveyWidget extends StatefulWidget {
   final FutureOr<void> Function(dynamic data)? onAccept;
   final FutureOr<void> Function(dynamic data)? onDefer;
   final FutureOr<void> Function(dynamic data)? onSendToExpert;
+  final FutureOr<void> Function()? onBack;
 
   final SurveyController? controller;
   final WidgetBuilder? builder;
@@ -53,6 +54,7 @@ class SurveyWidget extends StatefulWidget {
     this.onAccept,
     this.onDefer,
     this.onSendToExpert,
+    this.onBack,
     this.controller,
     this.builder,
     this.removingEmptyFields = true,
@@ -213,6 +215,10 @@ class SurveyWidgetState extends State<SurveyWidget> {
         : formGroup.value);
   }
 
+  void back() {
+    widget.onBack?.call();
+  }
+
   @override
   void dispose() {
     _listener?.cancel();
@@ -236,12 +242,12 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
-  bool nextPageOrSubmit() {
+  bool nextPageOrBack() {
     final bool finished = _currentPage >= pageCount - 1;
     if (!finished) {
       toPage(_currentPage + 1);
     } else {
-      submit();
+      back();
     }
     return finished;
   }
@@ -351,9 +357,14 @@ class SurveyController {
     _widgetState!.sendToExpert();
   }
 
-  bool nextPageOrSubmit() {
+  void back(){
     assert(_widgetState != null, "SurveyWidget not initialized");
-    return _widgetState!.nextPageOrSubmit();
+    _widgetState!.sendToExpert();
+  }
+
+  bool nextPageOrBack() {
+    assert(_widgetState != null, "SurveyWidget not initialized");
+    return _widgetState!.nextPageOrBack();
   }
 
   void prePage() {
