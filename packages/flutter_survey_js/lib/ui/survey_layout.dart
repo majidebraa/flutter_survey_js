@@ -48,15 +48,12 @@ class SurveyLayout extends StatefulWidget {
   final Widget Function(BuildContext context, s.Page page)? pageBuilder;
   final EdgeInsets? padding;
 
-  final List<String>? outcomeList;
-
   const SurveyLayout({
     Key? key,
     this.surveyTitleBuilder,
     this.stepperBuilder,
     this.pageBuilder,
     this.padding,
-    this.outcomeList,
   }) : super(key: key);
 
   @override
@@ -148,17 +145,21 @@ class SurveyLayoutState extends State<SurveyLayout> {
 
   List<Widget> _buildOutcomeButtons(BuildContext context) {
     final widgetSurvey = SurveyWidgetState.of(context).widget;
+
     final Map<String, FutureOr<void> Function(dynamic)>? callbacks =
         widgetSurvey.outcomeCallbacks;
+
+    final List<String>? outcomeList = widgetSurvey.outcomeList;
+
 
 
 
     // fallback: nothing
-    if (widget.outcomeList == null || widget.outcomeList!.isEmpty) return [];
+    if (outcomeList == null || outcomeList.isEmpty) return [];
 
     // map each outcome to a button if callback exists (case-insensitive lookup)
     final List<Widget> buttons = [];
-    for (final raw in widget.outcomeList!) {
+    for (final raw in outcomeList) {
       final String type = raw.toString();
       final String upper = type.toUpperCase();
 

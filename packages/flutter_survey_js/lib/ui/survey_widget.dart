@@ -33,6 +33,7 @@ class SurveyWidget extends StatefulWidget {
   final SurveyController? controller;
   final WidgetBuilder? builder;
   final bool removingEmptyFields;
+  final List<String>? outcomeList;
 
   const SurveyWidget({
     Key? key,
@@ -42,6 +43,7 @@ class SurveyWidget extends StatefulWidget {
     this.onChange,
     this.outcomeCallbacks,
     this.onBack,
+    this.outcomeList,
     this.controller,
     this.builder,
     this.removingEmptyFields = true,
