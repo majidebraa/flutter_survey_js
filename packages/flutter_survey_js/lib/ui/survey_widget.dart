@@ -16,22 +16,18 @@ Widget defaultBuilder(BuildContext context) {
 class SurveyWidget extends StatefulWidget {
   final s.Survey survey;
   final Map<String, Object?>? answer;
-  final FutureOr<void> Function(dynamic data)? onSubmit;
+
+  /// Generic error callback (keeps original behavior for form errors)
   final FutureOr<void> Function(dynamic data)? onErrors;
+
+  /// value change callback
   final ValueSetter<Map<String, Object?>?>? onChange;
 
-  /// cancel/reject kept as no-arg callbacks (existing behavior)
-  final FutureOr<void> Function()? onCancel;
-  final FutureOr<void> Function()? onReject;
+  /// Universal outcome callbacks: key is the outcome name (e.g. "SUBMIT", "APPROVE")
+  /// value is a callback that receives cleaned form data (Map) or any payload you expect.
+  final Map<String, FutureOr<void> Function(dynamic data)>? outcomeCallbacks;
 
-  /// Workflow callbacks that accept payload (cleaned form data)
-  final FutureOr<void> Function(dynamic data)? onApprove;
-  final FutureOr<void> Function(dynamic data)? onNo;
-  final FutureOr<void> Function(dynamic data)? onOK;
-  final FutureOr<void> Function(dynamic data)? onCompleted;
-  final FutureOr<void> Function(dynamic data)? onAccept;
-  final FutureOr<void> Function(dynamic data)? onDefer;
-  final FutureOr<void> Function(dynamic data)? onSendToExpert;
+  /// optional back action (no payload)
   final FutureOr<void> Function()? onBack;
 
   final SurveyController? controller;
@@ -42,18 +38,9 @@ class SurveyWidget extends StatefulWidget {
     Key? key,
     required this.survey,
     this.answer,
-    this.onSubmit,
     this.onErrors,
     this.onChange,
-    this.onCancel,
-    this.onReject,
-    this.onApprove,
-    this.onNo,
-    this.onOK,
-    this.onCompleted,
-    this.onAccept,
-    this.onDefer,
-    this.onSendToExpert,
+    this.outcomeCallbacks,
     this.onBack,
     this.controller,
     this.builder,
@@ -108,8 +95,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
         formGroup: formGroup,
         child: StreamBuilder(
           stream: formGroup.valueChanges,
-          builder: (BuildContext context,
-              AsyncSnapshot<Map<String, Object?>?> snapshot) {
+          builder:
+              (BuildContext context, AsyncSnapshot<Map<String, Object?>?> snapshot) {
             return SurveyProvider(
               survey: widget.survey,
               formGroup: formGroup,
@@ -117,8 +104,7 @@ class SurveyWidgetState extends State<SurveyWidget> {
               currentPage: currentPage,
               initialPage: initialPage,
               child: Builder(
-                  builder: (context) =>
-                      (widget.builder ?? defaultBuilder)(context)),
+                  builder: (context) => (widget.builder ?? defaultBuilder)(context)),
             );
           },
         ),
@@ -135,10 +121,11 @@ class SurveyWidgetState extends State<SurveyWidget> {
     _listener?.cancel();
     _currentPage = 0;
     rootNode = ElementNode(
-        element: null,
-        rawElement: null,
-        survey: widget.survey,
-        isRootSurvey: true);
+      element: null,
+      rawElement: null,
+      survey: widget.survey,
+      isRootSurvey: true,
+    );
 
     constructElementNode(context, rootNode);
 
@@ -151,11 +138,12 @@ class SurveyWidgetState extends State<SurveyWidget> {
     pageCount = widget.survey.getPageCount();
   }
 
+  /// Submits: when the form is valid we call the SUBMIT outcome callback if present.
   bool submit() {
     if (formGroup.valid) {
-      widget.onSubmit?.call(widget.removingEmptyFields
-          ? removeEmptyField(formGroup.value)
-          : formGroup.value);
+      final data =
+      widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup.value;
+      _callOutcomeCallback('SUBMIT', data);
       return true;
     } else {
       widget.onErrors?.call(formGroup.errors);
@@ -164,59 +152,43 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
-  void cancel() {
-    widget.onCancel?.call();
-  }
-
-  void reject() {
-    widget.onReject?.call();
-  }
-
-  // --- NEW workflow actions (send cleaned form data) ---
-  void approve() {
-    widget.onApprove?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void no() {
-    widget.onNo?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void ok() {
-    widget.onOK?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void completed() {
-    widget.onCompleted?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void accept() {
-    widget.onAccept?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void defer() {
-    widget.onDefer?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
-  void sendToExpert() {
-    widget.onSendToExpert?.call(widget.removingEmptyFields
-        ? removeEmptyField(formGroup.value)
-        : formGroup.value);
-  }
-
+  /// Back navigation (no payload)
   void back() {
-    widget.onBack?.call();
+    if (widget.onBack != null) {
+      widget.onBack?.call();
+      return;
+    }
+    // if onBack not provided, default to go to previous page
+    if (_currentPage > 0) {
+      toPage(_currentPage - 1);
+      return;
+    }
+    // otherwise try to call a BACK/NO outcome if present
+    _callOutcomeCallback('NO', null);
+  }
+
+  /// Generic "trigger outcome" - looks up callback by key (case-insensitive)
+  void triggerOutcome(String outcomeType) {
+    final data =
+    widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup.value;
+    _callOutcomeCallback(outcomeType, data);
+  }
+
+  void _callOutcomeCallback(String outcomeType, dynamic data) {
+    if (widget.outcomeCallbacks == null) return;
+
+    // try exact, uppercase, lowercase keys
+    FutureOr<void> Function(dynamic)? cb = widget.outcomeCallbacks![outcomeType];
+    cb ??= widget.outcomeCallbacks![outcomeType.toUpperCase()];
+    cb ??= widget.outcomeCallbacks![outcomeType.toLowerCase()];
+
+    if (cb != null) {
+      try {
+        cb(data);
+      } catch (e, st) {
+        logger.warning('Error calling outcome callback for $outcomeType: $e\n$st');
+      }
+    }
   }
 
   @override
@@ -242,6 +214,7 @@ class SurveyWidgetState extends State<SurveyWidget> {
     }
   }
 
+  /// Next page or call "back" (the original code used nextPageOrBack semantics).
   bool nextPageOrBack() {
     final bool finished = _currentPage >= pageCount - 1;
     if (!finished) {
@@ -294,7 +267,7 @@ class SurveyController {
   }
 
   void _bind(SurveyWidgetState state) {
-    assert(_widget_state_null_check(), // defensive assert helper below
+    assert(_widget_state_null_check(),
     "Don't use one SurveyController to multiple SurveyWidget");
     _widgetState = state;
   }
@@ -306,63 +279,25 @@ class SurveyController {
     _widgetState = null;
   }
 
+  /// Trigger SUBMIT (calls outcome callback if present)
   bool submit() {
     assert(_widgetState != null, "SurveyWidget not initialized");
     return _widgetState!.submit();
   }
 
-  void cancel() {
+  /// Trigger arbitrary outcome by name (e.g. "APPROVE", "REJECT")
+  void triggerOutcome(String outcomeType) {
     assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.cancel();
+    _widgetState!.triggerOutcome(outcomeType);
   }
 
-  void reject() {
+  /// Back navigation (calls onBack or previous page)
+  void back() {
     assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.reject();
+    _widgetState!.back();
   }
 
-  // --- NEW controller helpers for workflow actions ---
-  void approve() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.approve();
-  }
-
-  void no() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.no();
-  }
-
-  void ok() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.ok();
-  }
-
-  void completed() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.completed();
-  }
-
-  void accept() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.accept();
-  }
-
-  void defer() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.defer();
-  }
-
-  void sendToExpert() {
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.sendToExpert();
-  }
-
-  void back(){
-    assert(_widgetState != null, "SurveyWidget not initialized");
-    _widgetState!.sendToExpert();
-  }
-
-  bool nextPageOrBack() {
+  bool nextPageOrSubmit() {
     assert(_widgetState != null, "SurveyWidget not initialized");
     return _widgetState!.nextPageOrBack();
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/generated/l10n.dart';
 import 'package:flutter_survey_js/ui/survey_page_widget.dart';
@@ -19,8 +21,7 @@ Widget defaultSurveyTitleBuilder(BuildContext context, s.Survey survey) {
   return Container();
 }
 
-Widget defaultStepperBuilder(
-    BuildContext context, int pageCount, int currentPage) {
+Widget defaultStepperBuilder(BuildContext context, int pageCount, int currentPage) {
   if (pageCount > 1) {
     return DotStepper(
       dotCount: pageCount,
@@ -42,12 +43,12 @@ Widget defaultStepperBuilder(
 }
 
 class SurveyLayout extends StatefulWidget {
-  final Widget Function(BuildContext context, s.Survey survey)?
-  surveyTitleBuilder;
-  final Widget Function(BuildContext context, int pageCount, int currentPage)?
-  stepperBuilder;
+  final Widget Function(BuildContext context, s.Survey survey)? surveyTitleBuilder;
+  final Widget Function(BuildContext context, int pageCount, int currentPage)? stepperBuilder;
   final Widget Function(BuildContext context, s.Page page)? pageBuilder;
   final EdgeInsets? padding;
+
+  final List<String>? outcomeList;
 
   const SurveyLayout({
     Key? key,
@@ -55,6 +56,7 @@ class SurveyLayout extends StatefulWidget {
     this.stepperBuilder,
     this.pageBuilder,
     this.padding,
+    this.outcomeList,
   }) : super(key: key);
 
   @override
@@ -86,12 +88,10 @@ class SurveyLayoutState extends State<SurveyLayout> {
   @override
   void didChangeDependencies() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (SurveyProvider.of(context).initialPage !=
-          pageController?.initialPage) {
+      if (SurveyProvider.of(context).initialPage != pageController?.initialPage) {
         pageController?.jumpToPage(SurveyProvider.of(context).initialPage);
       }
-      if (SurveyProvider.of(context).currentPage !=
-          pageController?.page?.toInt()) {
+      if (SurveyProvider.of(context).currentPage != pageController?.page?.toInt()) {
         pageController?.jumpToPage(SurveyProvider.of(context).currentPage);
       }
     });
@@ -131,35 +131,8 @@ class SurveyLayoutState extends State<SurveyLayout> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    // Workflow buttons (preset A) — each appears only if callback provided.
-                    if (SurveyWidgetState.of(context).widget.onSubmit != null)
-                      submitActionButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onNo != null)
-                      noButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onApprove != null)
-                      approveButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onErrors != null)
-                    /* reuse onErrors as REJECT workflow? */
-                      rejectWorkflowButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onOK != null)
-                      okButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onCompleted != null)
-                      completedButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onAccept != null)
-                      acceptButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onDefer != null)
-                      deferButton(),
-
-                    if (SurveyWidgetState.of(context).widget.onSendToExpert !=
-                        null)
-                      sendToExpertButton(),
+                    // dynamically build outcome buttons
+                    ..._buildOutcomeButtons(context),
 
                     if (currentPage != 0) previousButton(),
                     nextButton(),
@@ -171,6 +144,52 @@ class SurveyLayoutState extends State<SurveyLayout> {
         ),
       ],
     );
+  }
+
+  List<Widget> _buildOutcomeButtons(BuildContext context) {
+    final widgetSurvey = SurveyWidgetState.of(context).widget;
+    final Map<String, FutureOr<void> Function(dynamic)>? callbacks =
+        widgetSurvey.outcomeCallbacks;
+
+
+
+    // fallback: nothing
+    if (widget.outcomeList == null || widget.outcomeList!.isEmpty) return [];
+
+    // map each outcome to a button if callback exists (case-insensitive lookup)
+    final List<Widget> buttons = [];
+    for (final raw in widget.outcomeList!) {
+      final String type = raw.toString();
+      final String upper = type.toUpperCase();
+
+      // find callback (accept upper/lower/exact)
+      final cb = callbacks == null
+          ? null
+          : (callbacks[type] ?? callbacks[upper] ?? callbacks[type.toLowerCase()]);
+
+      if (cb == null) {
+        // do not show button if no callback
+        continue;
+      }
+
+      final label = _labelForOutcome(upper);
+      final icon = _iconForOutcome(upper);
+      final color = _colorForOutcome(upper);
+
+      buttons.add(
+        actionButton(
+          label: label,
+          icon: icon,
+          color: color,
+          onPressed: () {
+            // call the widget state to ensure form cleaning is consistent
+            SurveyWidgetState.of(context).triggerOutcome(type);
+          },
+        ),
+      );
+    }
+
+    return buttons;
   }
 
   Widget buildPages(List<s.Page> pages,
@@ -199,17 +218,10 @@ class SurveyLayoutState extends State<SurveyLayout> {
     final bool finished = currentPage >= pageCount - 1;
 
     return actionButton(
-      label: finished ? /*S.of(context).submitSurvey*/ "بازگشت" : S.of(context).nextPage,
+      label: finished ? "بازگشت" : S.of(context).nextPage,
       icon: Icons.exit_to_app,
       color: Colors.blueGrey,
       onPressed: () => SurveyWidgetState.of(context).nextPageOrBack(),
-    );
-
-    return ElevatedButton(
-      child: Text(finished ? /*S.of(context).submitSurvey*/ "بازگشت" : S.of(context).nextPage),
-      onPressed: () {
-        SurveyWidgetState.of(context).nextPageOrBack();
-      },
     );
   }
 
@@ -220,12 +232,6 @@ class SurveyLayoutState extends State<SurveyLayout> {
       color: Colors.blueGrey,
       onPressed: () => toPage(currentPage - 1),
     );
-    /*return ElevatedButton(
-      child: Text(S.of(context).previousPage),
-      onPressed: () {
-        toPage(currentPage - 1);
-      },
-    );*/
   }
 
   // Helper to render action buttons consistently
@@ -248,89 +254,83 @@ class SurveyLayoutState extends State<SurveyLayout> {
     );
   }
 
-
-  // --- New workflow buttons (call state methods that pass cleaned form data) ---
-
-  Widget submitActionButton() {
-    return actionButton(
-      label: "ثبت و ارسال",
-      icon: Icons.send,
-      color: Colors.green,
-      onPressed: () => SurveyWidgetState.of(context).submit(),
-    );
+  // outcome -> Persian label map
+  String _labelForOutcome(String outcome) {
+    switch (outcome.toUpperCase()) {
+      case 'SUBMIT':
+        return 'ثبت و ارسال';
+      case 'NO':
+        return 'انصراف از درخواست';
+      case 'ACCEPT':
+        return 'قبول';
+      case 'COMPLETED':
+        return 'تکمیل فرآیند';
+      case 'OK':
+        return 'مشاهده شد';
+      case 'REJECT':
+        return 'عدم تایید';
+      case 'APPROVE':
+        return 'تایید';
+      case 'DEFER':
+        return 'بازگشت جهت اصلاح';
+      case 'SENDTOEXPERT':
+        return 'ارسال جهت کارشناسی';
+      default:
+        return outcome;
+    }
   }
 
-  Widget noButton() {
-    return actionButton(
-      label: "انصراف از درخواست",
-      icon: Icons.delete_forever,
-      color: Colors.deepOrange,
-      onPressed: () => SurveyWidgetState.of(context).no(),
-    );
+  // outcome -> icon map
+  IconData _iconForOutcome(String outcome) {
+    switch (outcome.toUpperCase()) {
+      case 'SUBMIT':
+        return Icons.send;
+      case 'NO':
+        return Icons.close;
+      case 'ACCEPT':
+        return Icons.thumb_up_alt;
+      case 'COMPLETED':
+        return Icons.done_all;
+      case 'OK':
+        return Icons.visibility;
+      case 'REJECT':
+        return Icons.cancel;
+      case 'APPROVE':
+        return Icons.check_circle;
+      case 'DEFER':
+        return Icons.undo;
+      case 'SENDTOEXPERT':
+        return Icons.engineering;
+      default:
+        return Icons.help_outline;
+    }
   }
 
-  Widget approveButton() {
-    return actionButton(
-      label: "تایید",
-      icon: Icons.check_circle,
-      color: Colors.blue,
-      onPressed: () => SurveyWidgetState.of(context).approve(),
-    );
-  }
-
-  // I reused onErrors presence as a fallback to show a REJECT workflow button if you wired it that way.
-  Widget rejectWorkflowButton() {
-    return actionButton(
-      label: "عدم تایید",
-      icon: Icons.cancel,
-      color: Colors.red.shade700,
-      onPressed: () => SurveyWidgetState.of(context).reject(),
-    );
-  }
-
-  Widget okButton() {
-    return actionButton(
-      label: "مشاهده شد",
-      icon: Icons.visibility,
-      color: Colors.indigo,
-      onPressed: () => SurveyWidgetState.of(context).ok(),
-    );
-  }
-
-  Widget completedButton() {
-    return actionButton(
-      label: "تکمیل فرآیند",
-      icon: Icons.done_all,
-      color: Colors.teal,
-      onPressed: () => SurveyWidgetState.of(context).completed(),
-    );
-  }
-
-  Widget acceptButton() {
-    return actionButton(
-      label: "قبول",
-      icon: Icons.thumb_up_alt,
-      color: Colors.green.shade700,
-      onPressed: () => SurveyWidgetState.of(context).accept(),
-    );
-  }
-
-  Widget deferButton() {
-    return actionButton(
-      label: "بازگشت جهت اصلاح",
-      icon: Icons.undo,
-      color: Colors.amber.shade800,
-      onPressed: () => SurveyWidgetState.of(context).defer(),
-    );
-  }
-
-  Widget sendToExpertButton() {
-    return actionButton(
-      label: "ارسال جهت کارشناسی",
-      icon: Icons.engineering,
-      color: Colors.purple,
-      onPressed: () => SurveyWidgetState.of(context).sendToExpert(),
-    );
+  // outcome -> color map
+  Color _colorForOutcome(String outcome) {
+    switch (outcome.toUpperCase()) {
+      case 'SUBMIT':
+        return Colors.green;
+      case 'NO':
+        return Colors.deepOrange;
+      case 'ACCEPT':
+        return Colors.green.shade700;
+      case 'COMPLETED':
+        return Colors.teal;
+      case 'OK':
+        return Colors.indigo;
+      case 'REJECT':
+        return Colors.red.shade700;
+      case 'APPROVE':
+        return Colors.blue;
+      case 'DEFER':
+        return Colors.amber.shade800;
+      case 'SENDTOEXPORT':
+      case 'SENDTOEXPERT':
+        return Colors.purple;
+      default:
+        return Colors.blueGrey;
+    }
   }
 
   @override
