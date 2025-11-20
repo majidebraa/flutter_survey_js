@@ -1,3 +1,4 @@
+// lib/ui/element_node.dart
 import 'package:flutter/widgets.dart';
 import 'package:flutter_survey_js/flutter_survey_js.dart' as s;
 import 'package:flutter_survey_js/ui/elements/matrix_dropdown_base.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_survey_js/ui/survey_element_factory.dart';
 import 'package:flutter_survey_js/ui/validators.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart';
 import 'package:reactive_forms/reactive_forms.dart';
+
 import 'elements/multiple_text.dart';
 
 class IndexParams {
@@ -40,15 +42,15 @@ class IndexParams {
 }
 
 class ElementNode {
-  ElementNode(
-      {required this.element,
-      required this.rawElement,
-      required this.survey,
-      this.isRootSurvey = false,
-      this.parent});
+  ElementNode({
+    required this.element,
+    required this.rawElement,
+    required this.survey,
+    this.isRootSurvey = false,
+    this.parent,
+  });
 
   final Object? rawElement;
-
   final s.Elementbase? element;
 
   AbstractControl? control;
@@ -56,40 +58,27 @@ class ElementNode {
   s.Survey survey;
   bool isRootSurvey = false;
   ElementNode? parent;
-  List<ElementNode> children = [];
+  final List<ElementNode> children = [];
 
   bool? visibleIf;
-
   bool? enableIf;
-
   bool? requireIf;
-
   bool? columnsVisibleIf;
   bool? rowsVisibleIf;
-
   bool? choicesVisible;
   bool? choicesEnable;
   bool? templateVisible;
 
-  //element index
+  // element index
   int? indexAll;
-
-  //not including invisible panel items
   int? panelIndex;
-
   int? panelIndexOfAll;
-
   int? indexInPage;
-
   int pageIndex = 0;
 
   bool? isInsideDynamic;
-
-  // index in dynamic panel
   int? dynamicPanelIndex;
-
   Object? defaultValue;
-
   bool isLatestUnfinishedQuestion = false;
 
   int? rowIndex;
@@ -100,11 +89,11 @@ class ElementNode {
   Object? expressionValue;
 
   Object? get value {
-    //for some elements implements Panelbase(like Panel and Page), control ==null;
+    // for some elements implements Panelbase(like Panel and Page), control == null;
     if (control != null) {
       return control!.value;
     }
-    Map<String, Object?> ret = {};
+    final Map<String, Object?> ret = {};
     for (final child in children) {
       final v = child.value;
       if (v != null) {
@@ -189,33 +178,32 @@ class ElementNode {
   }
 
   void runExpression(
-      Map<String, Object?> values, Map<String, Object?> properties) {
-    final newValues = Map.fromEntries(values.entries);
-    final newProperties = Map.fromEntries(properties.entries);
+      Map<String, Object?>? values, Map<String, Object?>? properties) {
+    // defensively handle null maps
+    final newValues = Map<String, Object?>.from(values ?? <String, Object?>{});
+    final newProperties =
+        Map<String, Object?>.from(properties ?? <String, Object?>{});
 
-    // add addition context values
-    {
-      if (element is s.Question) {
-        newProperties["question"] = s.surveySerializers.serialize(element);
-      }
-
-      if (element is s.Matrixdropdownbase) {
-        newValues[MaxtrixDropdownBaseVar.ownerVariableName] = value;
-        newValues[MaxtrixDropdownBaseVar.indexVariableName] = rowIndex;
-        newValues[MaxtrixDropdownBaseVar.rowValueVariableName] = rowName;
-
-        //TODO difference of MaxtrixDropdownBaseVar.rowVariableName and MaxtrixDropdownBaseVar.ownerVariableName ?
-
-        newProperties[MaxtrixDropdownBaseVar.rowVariableName] = value;
-      }
-      if (element is s.Paneldynamic) {
-        newValues[QuestionPanelDynamicVar.parentItemVariableName] =
-            parent?.value;
-      }
+    // add additional context values
+    if (element is s.Question) {
+      newProperties["question"] = s.surveySerializers.serialize(element);
     }
 
-    //run self expression
-    {
+    if (element is s.Matrixdropdownbase) {
+      // supply matrix row/self context
+      newValues[MaxtrixDropdownBaseVar.ownerVariableName] = value;
+      newValues[MaxtrixDropdownBaseVar.indexVariableName] = rowIndex;
+      newValues[MaxtrixDropdownBaseVar.rowValueVariableName] = rowName;
+      newProperties[MaxtrixDropdownBaseVar.rowVariableName] = value;
+    }
+
+    if (element is s.Paneldynamic) {
+      newValues[QuestionPanelDynamicVar.parentItemVariableName] = parent?.value;
+    }
+
+    // run expressions for this node
+    try {
+      // Questions
       if (element is s.Question) {
         final e = element as s.Question;
         if (e.requiredIf?.isNotEmpty ?? false) {
@@ -237,9 +225,11 @@ class ElementNode {
           defaultValue = s.getRunner().runExpression(
                   e.defaultValueExpression!, newValues,
                   properties: newProperties) ??
-              true;
+              defaultValue;
         }
       }
+
+      // Panel / Page (Panelbase)
       if (element is s.Panelbase) {
         final e = element as s.Panelbase;
         if (e.requiredIf?.isNotEmpty ?? false) {
@@ -258,6 +248,8 @@ class ElementNode {
               true;
         }
       }
+
+      // Text min/max
       if (element is s.Text) {
         final e = element as s.Text;
         if (e.minValueExpression?.isNotEmpty ?? false) {
@@ -271,12 +263,16 @@ class ElementNode {
               properties: newProperties);
         }
       }
+
+      // Expression element
       if (element is s.Expression) {
         final e = element as s.Expression;
         expressionValue = s
             .getRunner()
             .runExpression(e.expression!, newValues, properties: newProperties);
       }
+
+      // Matrixbase columns/rows visible
       if (element is s.Matrixbase) {
         final e = element as s.Matrixbase;
         if (e.columnsVisibleIf?.isNotEmpty ?? false) {
@@ -292,6 +288,8 @@ class ElementNode {
               true;
         }
       }
+
+      // Selectbase choices visibility/enabled
       if (element is s.Selectbase) {
         final e = element as s.Selectbase;
         if (e.choicesVisibleIf?.isNotEmpty ?? false) {
@@ -307,6 +305,8 @@ class ElementNode {
               true;
         }
       }
+
+      // Paneldynamic template visible
       if (element is s.Paneldynamic) {
         final e = element as s.Paneldynamic;
         if (e.templateVisibleIf?.isNotEmpty ?? false) {
@@ -316,31 +316,34 @@ class ElementNode {
               true;
         }
       }
+    } catch (e) {
+      // Runner errors should not break evaluation of other nodes.
+      // Log via debug or ignore silently per policy of project.
+      // debugPrint('runExpression error: $e');
     }
 
-    //run children
-    {
-      bool hasRunChildren = false;
-      if (element is s.Paneldynamic) {
-        for (var panelIndex = 0; panelIndex < children.length; panelIndex++) {
-          newValues[QuestionPanelDynamicVar.itemVariableName] =
-              children[panelIndex].value;
-          newValues[QuestionPanelDynamicVar.indexVariableName] = panelIndex;
-          children[panelIndex].dynamicPanelIndex = panelIndex;
-          children[panelIndex].runExpression(newValues, newProperties);
-        }
-        hasRunChildren = true;
+    // run children
+    bool hasRunChildren = false;
+    if (element is s.Paneldynamic) {
+      for (var panelIndex = 0; panelIndex < children.length; panelIndex++) {
+        newValues[QuestionPanelDynamicVar.itemVariableName] =
+            children[panelIndex].value;
+        newValues[QuestionPanelDynamicVar.indexVariableName] = panelIndex;
+        children[panelIndex].dynamicPanelIndex = panelIndex;
+        children[panelIndex].runExpression(newValues, newProperties);
       }
-      //TODO matrixdynamic?
-      if (!hasRunChildren) {
-        for (var c in children) {
-          c.runExpression(newValues, newProperties);
-        }
-      }
+      hasRunChildren = true;
+    }
 
-      if (isRootSurvey) {
-        calIndexAfterExpression(IndexParams.root());
+    // TODO: handle matrixdynamic children with row contexts if required
+    if (!hasRunChildren) {
+      for (var c in children) {
+        c.runExpression(newValues, newProperties);
       }
+    }
+
+    if (isRootSurvey) {
+      calIndexAfterExpression(IndexParams.root());
     }
   }
 
@@ -425,7 +428,6 @@ class ElementNode {
             value: questionNode.element is Panelbase
                 ? value
                 : tryGetValue(questionNode.element!.name!, value));
-        //panel name could be null, and all of it's controls will be handled later
         if (questions[questionIndex].name != null &&
             questionNode.control != null) {
           rowNodeControl
@@ -448,7 +450,7 @@ class ElementNode {
     assert(control is FormArray);
     final formArray = control as FormArray;
 
-    for (final node in List.from(children)) {
+    for (final node in List<ElementNode>.from(children)) {
       children.remove(node);
     }
     formArray.clear();
@@ -474,12 +476,12 @@ void constructElementNode(BuildContext context, ElementNode node,
     {List<Validator> validators = const [],
     List<AsyncValidator> asyncValidators = const [],
     Object? value}) {
+  // root survey
   if (node.isRootSurvey) {
     final survey = node.survey;
     final pages = (survey.pages?.toList() ?? []);
     node.control = surveyfb.group({}, validators, asyncValidators);
     for (var i = 0; i < pages.length; i++) {
-      //page node get no control
       final pageNode = ElementNode(
           rawElement: pages[i],
           element: pages[i],
@@ -528,7 +530,7 @@ void constructElementNode(BuildContext context, ElementNode node,
         nodeControl.addAll({rowName: rowNode.control!});
       }
     } else if (nodeElement is s.Panelbase) {
-      //could be page or panel
+      // could be page or panel
       final questions = nodeElement.getElements();
       final panelControl = surveyfb.group({}, validators, asyncValidators);
       node.control = panelControl;
@@ -536,7 +538,8 @@ void constructElementNode(BuildContext context, ElementNode node,
         final questionNode = ElementNode(
             element: questions[panelIndex],
             rawElement: questions[panelIndex],
-            survey: node.survey);
+            survey: node.survey,
+            parent: node);
         node.addChild(questionNode);
         questionNode.dynamicPanelIndex = panelIndex;
         constructElementNode(context, questionNode,
@@ -545,7 +548,6 @@ void constructElementNode(BuildContext context, ElementNode node,
             value: questionNode.element is Panelbase
                 ? value
                 : tryGetValue(questionNode.element!.name!, value));
-        //panel name could be null, and all of it's controls will be handled later
         if (questions[panelIndex].name != null &&
             questionNode.control != null) {
           panelControl
@@ -560,7 +562,8 @@ void constructElementNode(BuildContext context, ElementNode node,
         final questionNode = ElementNode(
             element: texts[i],
             rawElement: nodeElement.items[i],
-            survey: node.survey);
+            survey: node.survey,
+            parent: node);
         node.addChild(questionNode);
         constructElementNode(context, questionNode,
             asyncValidators: asyncValidators,
@@ -572,10 +575,9 @@ void constructElementNode(BuildContext context, ElementNode node,
     } else if (nodeElement is Matrixdynamic) {
       final nodeControl = surveyfb.array([]);
       node.control = nodeControl;
-      //handle default value
+      // handle default value
       final values = nodeElement.defaultValue.tryCastToListObj() ??
-          value.tryCastToList() ??
-          [];
+          (value is List ? value : []);
       for (final v in values) {
         node.dynamicArrayAddNew(context,
             validators: validators, asyncValidators: asyncValidators, value: v);
@@ -583,10 +585,9 @@ void constructElementNode(BuildContext context, ElementNode node,
     } else if (nodeElement is Paneldynamic) {
       final nodeControl = surveyfb.array([]);
       node.control = nodeControl;
-      //handle default value
+      // handle default value
       final values = nodeElement.defaultValue.tryCastToListObj() ??
-          value.tryCastToList() ??
-          [];
+          (value is List ? value : []);
       for (final v in values) {
         node.dynamicArrayAddNew(context,
             validators: validators, asyncValidators: asyncValidators, value: v);
@@ -596,22 +597,31 @@ void constructElementNode(BuildContext context, ElementNode node,
           value: value, validators: validators);
     }
 
+    // add comment control for selectbase
     if (nodeElement is s.Selectbase) {
       final commentName = "${nodeElement.name}-Comment";
-      final commentNode =
-          ElementNode(element: null, rawElement: null, survey: node.survey);
-      //always add comment control for selectbase, so that the answer patch will work
-      node.parent!.addChild(commentNode);
-      (node.parent!.control as FormGroup).addAll({
-        commentName: fb.control<String>("", [NonEmptyValidator()])
-      });
+      final commentNode = ElementNode(
+          element: null,
+          rawElement: null,
+          survey: node.survey,
+          parent: node.parent);
+      // always add comment control for selectbase, so that the answer patch will work
+      if (node.parent != null && node.parent!.control is FormGroup) {
+        node.parent!.addChild(commentNode);
+        (node.parent!.control as FormGroup).addAll({
+          commentName: fb.control<String>("", [NonEmptyValidator()])
+        });
+      }
     }
 
+    // If node is panelbase and control is FormGroup, merge with parent
     if (nodeElement is s.Panelbase) {
       if (node.control is FormGroup) {
-        (node.parent!.control as FormGroup)
-            .addAll((node.control as FormGroup).controls);
-        node.control = null;
+        if (node.parent != null && node.parent!.control is FormGroup) {
+          (node.parent!.control as FormGroup)
+              .addAll((node.control as FormGroup).controls);
+          node.control = null;
+        }
       }
     }
 

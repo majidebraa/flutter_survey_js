@@ -5,71 +5,41 @@ import 'package:flutter_js/flutter_js.dart';
 import 'package:flutter_survey_js_expression/flutter_survey_js_expression.dart';
 import 'package:synchronized/synchronized.dart';
 
-String escape(String raw) {
-  return raw.replaceAll("\"", "\\\"");
+String escapeJson(String raw) {
+  return raw
+      .replaceAll("\\", "\\\\")
+      .replaceAll("\"", "\\\"")
+      .replaceAll("\n", "\\n");
 }
 
 Future<JavascriptRuntime> initJsEngine() async {
   final jsRuntime = getJavascriptRuntime(xhr: false);
-  var a = jsRuntime.evaluate("""var window = global = globalThis;""");
-  if (a.isError) {
-    throw Exception(a.rawResult);
-  }
-  final expressionJs = await rootBundle
-      .loadString("packages/flutter_survey_js_expression/assets/index.js");
-  a = jsRuntime.evaluate(expressionJs);
-  if (a.isError) {
-    throw Exception(a.rawResult);
-  }
-  //validate
-  var loaded =
-      jsRuntime.evaluate("""var isLoaded = (typeof surveyjs == 'undefined') ? 
-          "0" : "1"; isLoaded;
-        """).stringResult;
-  if (loaded == "0") {
-    throw Exception("Js unloaded");
-  }
+
+  final setup = jsRuntime.evaluate("""
+    var window = global = globalThis;
+  """);
+
+  if (setup.isError) throw Exception(setup.rawResult);
+
+  final expressionJs = await rootBundle.loadString(
+    "packages/flutter_survey_js_expression/assets/index.js",
+  );
+
+  final load = jsRuntime.evaluate(expressionJs);
+  if (load.isError) throw Exception(load.rawResult);
+
+  final loaded = jsRuntime.evaluate("""
+    (typeof surveyjs === "undefined") ? "0" : "1";
+  """).stringResult;
+
+  if (loaded != "1") throw Exception("Failed to load JS survey engine");
+
   return jsRuntime;
 }
 
 class VMRunner implements Runner {
   JavascriptRuntime? jsRuntime;
   final lock = Lock();
-
-  @override
-  bool? runCondition(String expression, Map<String, Object?> value,
-      {Map<String, Object?>? properties}) {
-    final exp =
-        '''surveyjs.runCondition("$expression","${escape(json.encode(value))}")''';
-    final jsResult = jsRuntime!.evaluate(exp);
-    if (jsResult.isError) {
-      throw Exception(jsResult.rawResult);
-    }
-    return bool.tryParse(jsResult.stringResult);
-  }
-
-  @override
-  Object? runExpression(String expression, Map<String, Object?> value,
-      {Map<String, Object?>? properties}) {
-    if (jsRuntime == null) {
-      throw Exception("JS Runtime not initialized. Call Runner.init() first.");
-    }
-
-    final exp = '''
-    surveyjs.runExpression(
-      ${jsonEncode(expression)},
-      ${jsonEncode(value)}
-    )
-  ''';
-
-    final jsResult = jsRuntime!.evaluate(exp);
-
-    if (jsResult.isError) {
-      throw Exception(jsResult.rawResult);
-    }
-
-    return jsonDecode(jsResult.stringResult);
-  }
 
   @override
   Future<bool> init() async {
@@ -80,8 +50,60 @@ class VMRunner implements Runner {
   }
 
   @override
+  bool? runCondition(
+    String expression,
+    Map<String, Object?> value, {
+    Map<String, Object?>? properties,
+  }) {
+    if (jsRuntime == null) return false;
+
+    final jsonStr = escapeJson(json.encode(value));
+    final exp = '''
+      surveyjs.runCondition("${escapeJson(expression)}","$jsonStr")
+    ''';
+
+    final result = jsRuntime!.evaluate(exp);
+    if (result.isError) throw Exception(result.rawResult);
+
+    final v = result.stringResult.trim().toLowerCase();
+    if (v == "true") return true;
+    if (v == "false") return false;
+    return null;
+  }
+
+  @override
+  Object? runExpression(
+    String expression,
+    Map<String, Object?> value, {
+    Map<String, Object?>? properties,
+  }) {
+    if (jsRuntime == null) return null;
+
+    final jsonStr = escapeJson(json.encode(value));
+    final exp = '''
+      surveyjs.runExpression("${escapeJson(expression)}","$jsonStr")
+    ''';
+
+    final result = jsRuntime!.evaluate(exp);
+    if (result.isError) throw Exception(result.rawResult);
+
+    // JS returns stringResult, not rawResult
+    final raw = result.stringResult.trim();
+
+    // Try parse int/double/bool
+    if (int.tryParse(raw) != null) return int.parse(raw);
+    if (double.tryParse(raw) != null) return double.parse(raw);
+
+    if (raw.toLowerCase() == "true") return true;
+    if (raw.toLowerCase() == "false") return false;
+
+    return raw;
+  }
+
+  @override
   Future<bool> dispose() async {
-    jsRuntime!.dispose();
+    jsRuntime?.dispose();
+    jsRuntime = null;
     return true;
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_survey_js/flutter_survey_js.dart' as s;
 import 'package:flutter_survey_js/generated/l10n.dart';
 import 'package:flutter_survey_js/ui/form_control.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_nested_form.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_wrap_form_array.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
-import 'package:flutter_survey_js/flutter_survey_js.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
 
 Widget panelDynamicBuilder(BuildContext context, s.Elementbase element,
@@ -26,7 +26,7 @@ class PanelDynamicElement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final survey = s.SurveyWidgetState.of(context);
-    final node = survey.rootNode.findByElement(element: element)!;
+    final node = survey.rootNode?.findByElement(element: element)!;
 
     return ReactiveWrapFormArray(
       wrapper:
@@ -40,27 +40,27 @@ class PanelDynamicElement extends StatelessWidget {
           child: child,
         );
       },
-      formArray: node.control as FormArray,
+      formArray: node?.control as FormArray,
       builder: (context, _, child) {
         bool needToFixValue = false;
-        for (final c in (node.control as FormArray).controls) {
+        for (final c in (node?.control as FormArray).controls) {
           if (c is! FormGroup) {
             needToFixValue = true;
           }
         }
         if (needToFixValue) {
-          final values = node.value.tryCastToList() ?? [];
-          node.dynamicArrayRemoveAll();
+          final values = node?.value.tryCastToList() ?? [];
+          node?.dynamicArrayRemoveAll();
           for (final v in values) {
-            node.dynamicArrayAddNew(context, value: v);
+            node?.dynamicArrayAddNew(context, value: v);
           }
         }
 
-        final panelNodes = node.children;
+        final panelNodes = node?.children;
 
         return Column(children: [
-          ...List.generate(panelNodes.length, (index) {
-            final panelNode = panelNodes[index];
+          ...List.generate(panelNodes?.length ?? 0, (index) {
+            final panelNode = panelNodes?[index];
             return Stack(
               key: ObjectKey(panelNode),
               alignment: Alignment.topRight,
@@ -73,7 +73,7 @@ class PanelDynamicElement extends StatelessWidget {
                       decoration: BoxDecoration(
                           border: Border.all(color: Colors.black26)),
                       child: ReactiveNestedForm(
-                          formGroup: panelNode.control as FormGroup,
+                          formGroup: panelNode?.control as FormGroup,
                           child: ListView.separated(
                             physics: const ClampingScrollPhysics(),
                             shrinkWrap: true,
@@ -92,11 +92,11 @@ class PanelDynamicElement extends StatelessWidget {
                             },
                           ))),
                 ),
-                if (panelNodes.isNotEmpty)
+                if (panelNodes!.isNotEmpty)
                   InkWell(
                     onTap: () {
                       //remove this form
-                      node.dynamicArrayRemoveNode(panelNode);
+                      node?.dynamicArrayRemoveNode(panelNode!);
                     },
                     child: Container(
                       margin: const EdgeInsets.all(3),
@@ -121,7 +121,7 @@ class PanelDynamicElement extends StatelessWidget {
             padding: const EdgeInsets.all(5),
             child: ElevatedButton(
               onPressed: () {
-                node.dynamicArrayAddNew(context);
+                node?.dynamicArrayAddNew(context);
               },
               child: Text(S.of(context).add),
             ),

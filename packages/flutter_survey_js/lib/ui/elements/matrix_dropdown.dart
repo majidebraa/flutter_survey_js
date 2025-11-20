@@ -4,7 +4,6 @@ import 'package:flutter_survey_js/ui/custom_scroll_behavior.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_nested_form.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
 import 'package:flutter_survey_js/ui/survey_widget.dart';
-
 import 'package:reactive_forms/reactive_forms.dart';
 
 import 'matrix_dropdown_base.dart';
@@ -22,6 +21,7 @@ class MatrixDropdownElement extends StatelessWidget {
   final s.Matrixdropdown matrix;
 
   final scrollController = ScrollController();
+
   MatrixDropdownElement(
       {Key? key, required this.formControlName, required this.matrix})
       : super(key: key);
@@ -29,7 +29,7 @@ class MatrixDropdownElement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final node =
-        SurveyWidgetState.of(context).rootNode.findByElement(element: matrix)!;
+        SurveyWidgetState.of(context).rootNode?.findByElement(element: matrix)!;
     return ReactiveNestedForm(
       formControlName: formControlName,
       child: LayoutBuilder(
@@ -48,7 +48,7 @@ class MatrixDropdownElement extends StatelessWidget {
                     child: MatrixDropdownTitle(e),
                   )))
             ]));
-        node.children.toList().asMap().forEach((i, rowNode) {
+        node?.children.toList().asMap().forEach((i, rowNode) {
           list.add(TableRow(
               decoration: i % 2 != 0
                   ? const BoxDecoration(
@@ -67,7 +67,9 @@ class MatrixDropdownElement extends StatelessWidget {
                               ?.getLocalizedText(context) ??
                           ""),
                     )),
-                ...rowNode.children.where((e) => e.element!=null).map((columnNode) {
+                ...rowNode.children
+                    .where((e) => e.element != null)
+                    .map((columnNode) {
                   return TableCell(
                       verticalAlignment: TableCellVerticalAlignment.middle,
                       child: ReactiveNestedForm(

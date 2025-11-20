@@ -1,3 +1,4 @@
+// lib/ui/survey_widget.dart
 import 'dart:async';
 import 'dart:math';
 
@@ -67,18 +68,48 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   int get currentPage => _currentPage;
 
-  late ElementNode rootNode;
+  /// root node is nullable while initialization occurs
+  ElementNode? rootNode;
 
-  FormGroup get formGroup => rootNode.control as FormGroup;
+  /// whether widget is ready to build (runner initialized + form constructed)
+  bool _ready = false;
+
+  FormGroup get formGroup {
+    assert(_ready && rootNode != null,
+        'FormGroup requested before widget is ready. Wait until widget is ready.');
+    final group = rootNode!.control;
+    if (group == null || group is! FormGroup) {
+      throw StateError('rootNode.control is not a FormGroup');
+    }
+    return group as FormGroup;
+  }
 
   @override
   void initState() {
     super.initState();
     widget.controller?._bind(this);
-    getRunner().init().then((_) {
-      // only rebuild AFTER JS engine is ready
+
+    // Initialize runner (JS engine) and then build the form tree.
+    // We intentionally do this async so the widget can show a loading state
+    // while the engine loads.
+    (() async {
+      try {
+        await getRunner().init();
+      } catch (e, st) {
+        // initialization error - log but continue. UI will still try to build.
+        logger.warning('Runner.init() failed: $e\n$st');
+      }
+
+      // Build the form tree and start listening to changes.
       rebuildForm();
-    });
+
+      // Mark widget ready and trigger build.
+      if (mounted) {
+        setState(() {
+          _ready = true;
+        });
+      }
+    })();
   }
 
   static SurveyWidgetState of(BuildContext context) {
@@ -87,6 +118,7 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   void toPage(int newPage) {
     final p = max(0, min(pageCount - 1, newPage));
+    if (_currentPage == p) return;
     setState(() {
       _currentPage = p;
     });
@@ -94,24 +126,34 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_ready || rootNode == null) {
+      // show a simple loading indicator while runner/form initializes
+      return Center(
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
     return SurveyConfiguration.copyAncestor(
       context: context,
       child: ReactiveForm(
         formGroup: formGroup,
-        child: StreamBuilder(
+        child: StreamBuilder<Map<String, Object?>?>(
           stream: formGroup.valueChanges,
-          builder:
-              (BuildContext context,
+          builder: (BuildContext context,
               AsyncSnapshot<Map<String, Object?>?> snapshot) {
             return SurveyProvider(
               survey: widget.survey,
               formGroup: formGroup,
-              rootNode: rootNode,
+              rootNode: rootNode!,
               currentPage: currentPage,
               initialPage: initialPage,
-              child: Builder(
-                  builder: (context) =>
-                      (widget.builder ?? defaultBuilder)(context)),
+              child: Builder(builder: (context) {
+                return (widget.builder ?? defaultBuilder)(context);
+              }),
             );
           },
         ),
@@ -119,14 +161,18 @@ class SurveyWidgetState extends State<SurveyWidget> {
     );
   }
 
+  /// rerun expression evaluation from root for given values (usually form values).
   void rerunExpression(Map<String, Object?> values) {
-    rootNode.runExpression(values, {});
+    if (rootNode == null) return;
+    // pass empty properties for now
+    rootNode!.runExpression(values, {});
   }
 
   void rebuildForm() {
     logger.fine("Rebuild form");
     _listener?.cancel();
     _currentPage = 0;
+
     rootNode = ElementNode(
       element: null,
       rawElement: null,
@@ -134,23 +180,35 @@ class SurveyWidgetState extends State<SurveyWidget> {
       isRootSurvey: true,
     );
 
-    constructElementNode(context, rootNode);
+    constructElementNode(context, rootNode!);
 
-    _listener = formGroup.valueChanges.listen((event) {
-      rerunExpression(event ?? {});
-      widget.onChange?.call(event == null ? null : removeEmptyField(event));
+    // listen to value changes and re-evaluate expressions
+    _listener = (rootNode!.control as FormGroup).valueChanges.listen((event) {
+      final values = event ?? <String, Object?>{};
+      rerunExpression(values);
+      widget.onChange?.call(values.isEmpty ? null : removeEmptyField(values));
     });
+
+    // apply provided answer
     _setAnswer(widget.answer);
-    rerunExpression(removeEmptyField(formGroup.value));
+
+    // ensure expressions are evaluated at least once
+    try {
+      rerunExpression(removeEmptyField((rootNode!.control as FormGroup).value));
+    } catch (e) {
+      logger.fine('Initial rerunExpression error: $e');
+    }
+
     pageCount = widget.survey.getPageCount();
   }
 
   /// Submits: when the form is valid we call the SUBMIT outcome callback if present.
   bool submit() {
+    if (rootNode == null) return false;
     if (formGroup.valid) {
-      final data =
-      widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup
-          .value;
+      final data = widget.removingEmptyFields
+          ? removeEmptyField(formGroup.value)
+          : formGroup.value;
       _callOutcomeCallback('SUBMIT', data);
       return true;
     } else {
@@ -177,9 +235,9 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   /// Generic "trigger outcome" - looks up callback by key (case-insensitive)
   void triggerOutcome(String outcomeType) {
-    final data =
-    widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup
-        .value;
+    final data = widget.removingEmptyFields
+        ? removeEmptyField(formGroup.value)
+        : formGroup.value;
     _callOutcomeCallback(outcomeType, data);
   }
 
@@ -187,14 +245,19 @@ class SurveyWidgetState extends State<SurveyWidget> {
     if (widget.outcomeCallbacks == null) return;
 
     // try exact, uppercase, lowercase keys
-    FutureOr<void> Function(dynamic)? cb = widget
-        .outcomeCallbacks![outcomeType];
+    FutureOr<void> Function(dynamic)? cb =
+        widget.outcomeCallbacks![outcomeType];
     cb ??= widget.outcomeCallbacks![outcomeType.toUpperCase()];
     cb ??= widget.outcomeCallbacks![outcomeType.toLowerCase()];
 
     if (cb != null) {
       try {
-        cb(data);
+        final res = cb(data);
+        if (res is Future) {
+          // optional: don't await here to avoid blocking UI
+          res.catchError(
+              (e, st) => logger.warning('Outcome callback error: $e\n$st'));
+        }
       } catch (e, st) {
         logger.warning(
             'Error calling outcome callback for $outcomeType: $e\n$st');
@@ -211,17 +274,22 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   @override
   void didUpdateWidget(covariant SurveyWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (oldWidget.survey != widget.survey) {
+      // rebuild full form if survey changes
       rebuildForm();
     } else if (oldWidget.answer != widget.answer) {
       _setAnswer(widget.answer);
     }
-    super.didUpdateWidget(oldWidget);
   }
 
   void _setAnswer(Map<String, Object?>? answer) {
-    if (widget.answer != null) {
-      formGroup.patchValue(widget.answer);
+    if (answer != null && rootNode != null && rootNode!.control is FormGroup) {
+      try {
+        (rootNode!.control as FormGroup).patchValue(answer);
+      } catch (e) {
+        logger.warning('Error patching answer: $e');
+      }
     }
   }
 
@@ -278,13 +346,11 @@ class SurveyController {
   }
 
   void _bind(SurveyWidgetState state) {
-    assert(_widget_state_null_check(),
-    "Don't use one SurveyController to multiple SurveyWidget");
+    // Only bind if not already bound to another state
+    assert(_widgetState == null,
+        "Don't bind a SurveyController to multiple SurveyWidgets");
     _widgetState = state;
   }
-
-  // small helper to keep analyzer happy in assert message
-  bool _widget_state_null_check() => _widgetState == null;
 
   void _detach() {
     _widgetState = null;

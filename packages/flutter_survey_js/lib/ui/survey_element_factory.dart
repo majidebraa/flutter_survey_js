@@ -161,8 +161,7 @@ class SurveyElementFactory {
     }
     var w = res(context, element, configuration: configuration);
     final node =
-        SurveyWidgetState.
-        of(context).rootNode.findByElement(element: element);
+        SurveyWidgetState.of(context).rootNode?.findByElement(element: element);
     return ConditionWidget(
       node: node!,
       child: w,
@@ -173,8 +172,7 @@ class SurveyElementFactory {
   // [value] default value passed down from parent. default value will be resolved by self default value then from parent
   AbstractControl? resolveFormControl(
       BuildContext context, s.Elementbase element,
-      {Object? value,List<Validator> validators = const []}) {
-
+      {Object? value, List<Validator> validators = const []}) {
     if (_formControlMap.containsKey(element.type)) {
       final c = _formControlMap[element.type];
       return c?.call(context, element, validators: validators, value: value);
