@@ -35,6 +35,7 @@ Future<JavascriptRuntime> initJsEngine() async {
 class VMRunner implements Runner {
   JavascriptRuntime? jsRuntime;
   final lock = Lock();
+
   @override
   bool? runCondition(String expression, Map<String, Object?> value,
       {Map<String, Object?>? properties}) {
@@ -50,13 +51,24 @@ class VMRunner implements Runner {
   @override
   Object? runExpression(String expression, Map<String, Object?> value,
       {Map<String, Object?>? properties}) {
-    final exp =
-        '''surveyjs.runExpression("$expression","${escape(json.encode(value))}")''';
+    if (jsRuntime == null) {
+      throw Exception("JS Runtime not initialized. Call Runner.init() first.");
+    }
+
+    final exp = '''
+    surveyjs.runExpression(
+      ${jsonEncode(expression)},
+      ${jsonEncode(value)}
+    )
+  ''';
+
     final jsResult = jsRuntime!.evaluate(exp);
+
     if (jsResult.isError) {
       throw Exception(jsResult.rawResult);
     }
-    return jsResult.rawResult;
+
+    return jsonDecode(jsResult.stringResult);
   }
 
   @override
@@ -75,4 +87,5 @@ class VMRunner implements Runner {
 }
 
 final VMRunner _singleton = VMRunner();
+
 Runner getRunner() => _singleton;

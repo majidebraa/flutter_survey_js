@@ -35,7 +35,7 @@ extension JalaliFormatting on Jalali {
       'اسفند'
     ];
 
-    final wdIndex = this.weekDay - 1; // Jalali.weekDay is 1-based, Saturday=1
+    final wdIndex = weekDay - 1; // Jalali.weekDay is 1-based, Saturday=1
     final wdName =
         (wdIndex >= 0 && wdIndex < weekDays.length) ? weekDays[wdIndex] : '';
     final mName = (month >= 1 && month <= 12) ? monthNames[month - 1] : '';

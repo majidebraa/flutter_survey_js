@@ -75,7 +75,10 @@ class SurveyWidgetState extends State<SurveyWidget> {
   void initState() {
     super.initState();
     widget.controller?._bind(this);
-    rebuildForm();
+    getRunner().init().then((_) {
+      // only rebuild AFTER JS engine is ready
+      rebuildForm();
+    });
   }
 
   static SurveyWidgetState of(BuildContext context) {
@@ -98,7 +101,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
         child: StreamBuilder(
           stream: formGroup.valueChanges,
           builder:
-              (BuildContext context, AsyncSnapshot<Map<String, Object?>?> snapshot) {
+              (BuildContext context,
+              AsyncSnapshot<Map<String, Object?>?> snapshot) {
             return SurveyProvider(
               survey: widget.survey,
               formGroup: formGroup,
@@ -106,7 +110,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
               currentPage: currentPage,
               initialPage: initialPage,
               child: Builder(
-                  builder: (context) => (widget.builder ?? defaultBuilder)(context)),
+                  builder: (context) =>
+                      (widget.builder ?? defaultBuilder)(context)),
             );
           },
         ),
@@ -144,7 +149,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
   bool submit() {
     if (formGroup.valid) {
       final data =
-      widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup.value;
+      widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup
+          .value;
       _callOutcomeCallback('SUBMIT', data);
       return true;
     } else {
@@ -172,7 +178,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
   /// Generic "trigger outcome" - looks up callback by key (case-insensitive)
   void triggerOutcome(String outcomeType) {
     final data =
-    widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup.value;
+    widget.removingEmptyFields ? removeEmptyField(formGroup.value) : formGroup
+        .value;
     _callOutcomeCallback(outcomeType, data);
   }
 
@@ -180,7 +187,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
     if (widget.outcomeCallbacks == null) return;
 
     // try exact, uppercase, lowercase keys
-    FutureOr<void> Function(dynamic)? cb = widget.outcomeCallbacks![outcomeType];
+    FutureOr<void> Function(dynamic)? cb = widget
+        .outcomeCallbacks![outcomeType];
     cb ??= widget.outcomeCallbacks![outcomeType.toUpperCase()];
     cb ??= widget.outcomeCallbacks![outcomeType.toLowerCase()];
 
@@ -188,7 +196,8 @@ class SurveyWidgetState extends State<SurveyWidget> {
       try {
         cb(data);
       } catch (e, st) {
-        logger.warning('Error calling outcome callback for $outcomeType: $e\n$st');
+        logger.warning(
+            'Error calling outcome callback for $outcomeType: $e\n$st');
       }
     }
   }
