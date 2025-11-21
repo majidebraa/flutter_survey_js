@@ -212,32 +212,10 @@ class SurveyWidgetState extends State<SurveyWidget> {
       _callOutcomeCallback('SUBMIT', data);
       return true;
     } else {
-      final errors = collectErrors(formGroup);
-
-      widget.onErrors?.call(errors);
+      widget.onErrors?.call(formGroup.errors);
       formGroup.markAllAsTouched();
       return false;
     }
-  }
-
-  Map<String, dynamic> collectErrors(AbstractControl control) {
-    final Map<String, dynamic> errors = {};
-    if (control is FormGroup) {
-      control.controls.forEach((key, child) {
-        final childErrors = collectErrors(child);
-        if (childErrors.isNotEmpty) errors[key] = childErrors;
-      });
-    } else if (control is FormArray) {
-      for (var i = 0; i < control.controls.length; i++) {
-        final childErrors = collectErrors(control.controls[i]);
-        if (childErrors.isNotEmpty) errors[i.toString()] = childErrors;
-      }
-    } else {
-      if (control.invalid) {
-        errors['error'] = control.errors;
-      }
-    }
-    return errors;
   }
 
   /// Back navigation (no payload)
@@ -309,7 +287,6 @@ class SurveyWidgetState extends State<SurveyWidget> {
     if (answer != null && rootNode != null && rootNode!.control is FormGroup) {
       try {
         (rootNode!.control as FormGroup).patchValue(answer);
-        (rootNode!.control as FormGroup).updateValueAndValidity();
       } catch (e) {
         logger.warning('Error patching answer: $e');
       }

@@ -629,7 +629,6 @@ void constructElementNode(BuildContext context, ElementNode node,
       node.control!.setValidators(
           [...node.control!.validators, ...questionToValidators(nodeElement)],
           autoValidate: true);
-      node.control?.updateValueAndValidity(); // Force validation
     }
   }
 }
