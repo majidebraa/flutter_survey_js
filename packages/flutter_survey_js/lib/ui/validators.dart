@@ -25,24 +25,20 @@ class NonEmptyValidator extends Validator<dynamic> {
 }
 
 /// Evaluates a SurveyJS expression using flutter_js
-bool evaluateExpression(String expression, Map<String, dynamic> allValues) {
+bool evaluateExpression(String expression, dynamic value) {
   try {
-    jsRuntime.evaluate('var survey = ${jsonEncode(allValues)};');
+    // Pass the value to JS context
+    jsRuntime.evaluate('var value = ${jsonEncode(value)};');
 
-    // Converts SurveyJS syntax:  {q1} -> survey["q1"]
-    final jsExpr = expression.replaceAllMapped(
-      RegExp(r'\{([^}]+)\}'),
-      (m) => 'survey["${m[1]}"]',
-    );
+    // Evaluate the expression
+    final result = jsRuntime.evaluate(expression);
+    final raw = result.rawResult;
 
-    final result = jsRuntime.evaluate(jsExpr);
-
-    final r = result.rawResult;
-    if (r is bool) return r;
-    if (r is num) return r != 0;
-    if (r is String) return r.toLowerCase() == 'true';
+    if (raw is bool) return raw;
+    if (raw is String) return raw.toLowerCase() == 'true';
+    if (raw is num) return raw != 0;
   } catch (e) {
-    print('Expression error: $e');
+    print('JS expression evaluation error: $e');
   }
   return false;
 }
@@ -105,29 +101,15 @@ List<Validator> questionToValidators(s.Question question) {
       }
 
       // Expression validator
-      if (value is s.Expressionvalidator) {
-        final expr = value.expression;
-
-        if (expr != null && expr.isNotEmpty) {
-          res.add(Validators.delegate((control) {
-            // Safe conversion of parent form values
-            final raw = control.parent?.value;
-
-            final formValues = raw is Map
-                ? raw.map<String, dynamic>((k, v) => MapEntry(k.toString(), v))
-                : <String, dynamic>{};
-
-            final valid = evaluateExpression(expr, formValues);
-
-            if (!valid) {
-              return {
-                'expression': value.text ?? 'Expression validation failed'
-              };
-            }
-
-            return null;
-          }));
-        }
+      if (value is s.Expressionvalidator &&
+          value.expression != null &&
+          value.expression!.isNotEmpty) {
+        final expr = value.expression!;
+        res.add(Validators.delegate((control) {
+          final valid = evaluateExpression(expr, control.value);
+          if (!valid) return {'expression': 'Expression validation failed'};
+          return null;
+        }));
       }
     }
   }
