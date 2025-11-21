@@ -1,11 +1,30 @@
 import 'dart:convert';
 
 import 'package:flutter_js/flutter_js.dart';
+import 'package:flutter_survey_js/flutter_survey_js.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
 
+/// Singleton JS runtime for evaluating expressions
 final JavascriptRuntime jsRuntime = getJavascriptRuntime();
 
+/// Validator that requires the control have a non-empty value.
+class NonEmptyValidator extends Validator<dynamic> {
+  @override
+  Map<String, dynamic>? validate(AbstractControl<dynamic> control) {
+    final error = <String, dynamic>{ValidationMessage.required: true};
+    final v = control.value;
+    if (v == null) return error;
+    if (v is String) return v.trim().isEmpty ? error : null;
+    if (v is List) return v.isEmpty ? error : null;
+    if (v is Map<String, Object?>)
+      return removeEmptyField(v).isEmpty ? error : null;
+    if (v is Map) return v.isEmpty ? error : null;
+    return null;
+  }
+}
+
+/// Evaluates a SurveyJS expression using flutter_js
 /// ------------------------------------------------------------
 /// NORMALIZATION UTILITIES
 /// ------------------------------------------------------------
@@ -120,7 +139,7 @@ List<Validator> questionToValidators(s.Question question) {
           final ok = evaluateExpression(expr, formValues);
 
           print(
-              'ExpressionValidator → field: ${question.title} expr:$expr:$expr result:$ok form:$formValues');
+              'ExpressionValidator → field: expr:$expr result:$ok form:$formValues');
 
           if (!ok) {
             return {'expression': message};
