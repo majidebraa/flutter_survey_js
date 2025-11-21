@@ -1,133 +1,133 @@
 import 'dart:convert';
 
 import 'package:flutter_js/flutter_js.dart';
+import 'package:flutter_survey_js/flutter_survey_js.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
 
+/// Singleton JS runtime for evaluating expressions
 final JavascriptRuntime jsRuntime = getJavascriptRuntime();
 
-/// ------------------------------------------------------------
-/// NORMALIZATION UTILITIES
-/// ------------------------------------------------------------
-
-Map<String, dynamic> _normalizeMap(Map input) {
-  final out = <String, dynamic>{};
-  input.forEach((k, v) {
-    out[k.toString()] = _normalizeValue(v);
-  });
-  return out;
-}
-
-dynamic _normalizeValue(dynamic v) {
-  if (v is String) {
-    final s = v.trim();
-
-    if (s.toLowerCase() == 'true') return true;
-    if (s.toLowerCase() == 'false') return false;
-
-    final intVal = int.tryParse(s);
-    if (intVal != null) return intVal;
-
-    final doubleVal = double.tryParse(s);
-    if (doubleVal != null) return doubleVal;
-
-    return v;
+/// Validator that requires the control have a non-empty value.
+class NonEmptyValidator extends Validator<dynamic> {
+  @override
+  Map<String, dynamic>? validate(AbstractControl<dynamic> control) {
+    final error = <String, dynamic>{ValidationMessage.required: true};
+    final v = control.value;
+    if (v == null) return error;
+    if (v is String) return v.trim().isEmpty ? error : null;
+    if (v is List) return v.isEmpty ? error : null;
+    if (v is Map<String, Object?>)
+      return removeEmptyField(v).isEmpty ? error : null;
+    if (v is Map) return v.isEmpty ? error : null;
+    return null;
   }
-
-  if (v is Map) return _normalizeMap(v);
-  if (v is List) return v.map((e) => _normalizeValue(e)).toList();
-
-  return v;
 }
 
-/// ------------------------------------------------------------
-/// EXPRESSION EVALUATION
-/// ------------------------------------------------------------
-
+/// Evaluates a SurveyJS expression using flutter_js
 bool evaluateExpression(String expression, Map<String, dynamic> allValues) {
   try {
-    final normalized = _normalizeMap(allValues);
-    final surveyJson = jsonEncode(normalized);
+    jsRuntime.evaluate('var survey = ${jsonEncode(allValues)};');
 
-    // Inject into JS runtime
-    jsRuntime.evaluate('var survey = $surveyJson;');
-
-    // Convert {age} → survey["age"]
+    // Converts SurveyJS syntax:  {q1} -> survey["q1"]
     final jsExpr = expression.replaceAllMapped(
       RegExp(r'\{([^}]+)\}'),
       (m) => 'survey["${m[1]}"]',
     );
 
-    print('runExpression: $expression values:$surveyJson jsExpr:$jsExpr');
-
     final result = jsRuntime.evaluate(jsExpr);
-    final raw = result.rawResult;
 
-    if (raw is bool) return raw;
-    if (raw is num) return raw != 0;
-    if (raw is String) {
-      final s = raw.toLowerCase();
-      if (s == 'true') return true;
-      if (s == 'false') return false;
-      final n = num.tryParse(raw);
-      if (n != null) return n != 0;
-    }
-  } catch (e, st) {
-    print('Expression error: $e\n$st');
+    final r = result.rawResult;
+    if (r is bool) return r;
+    if (r is num) return r != 0;
+    if (r is String) return r.toLowerCase() == 'true';
+  } catch (e) {
+    print('Expression error: $e');
   }
-
   return false;
 }
 
-/// ------------------------------------------------------------
-/// FULL VALIDATOR MAPPER (ADD THIS INSIDE YOUR questionToValidators)
-/// ------------------------------------------------------------
-
+/// Converts a SurveyJS question into ReactiveForms validators
 List<Validator> questionToValidators(s.Question question) {
   final res = <Validator>[];
 
-  // Required
-  if (question.isRequired == true) {
-    res.add(Validators.required);
+  // Required field
+  if (question.isRequired == true) res.add(NonEmptyValidator());
+
+  // Text question constraints
+  if (question is s.Text) {
+    final minValue = question.min?.oneOf.value.tryCastToNum();
+    final maxValue = question.max?.oneOf.value.tryCastToNum();
+    if (minValue != null) res.add(Validators.min(minValue));
+    if (maxValue != null) res.add(Validators.max(maxValue));
   }
 
-  // Other validators...
-  // (your existing numeric, regex, email, etc. validators remain unchanged)
-
-  // -------------------------------
-  // EXPRESSION VALIDATOR SUPPORT
-  // -------------------------------
-  final validators = question.validators?.map((p) => p.realValidator).toList();
+  // SurveyJS validators
+  final validators = question.validators?.map((v) => v.realValidator).toList();
   if (validators != null) {
     for (var value in validators) {
-      if (value is s.Expressionvalidator &&
-          value.expression != null &&
-          value.expression!.isNotEmpty) {
-        final expr = value.expression!;
-        final message =
-            (value.text != null) ? value.text! : 'Expression validation failed';
+      if (value is s.Numericvalidator) {
+        res.add(Validators.number());
+        if (value.maxValue != null) res.add(Validators.max(value.maxValue));
+        if (value.minValue != null) res.add(Validators.min(value.minValue));
+      }
 
-        res.add(Validators.delegate((control) {
-          // Parent full form JSON
-          final rawParent = control.parent?.value;
+      if (value is s.Textvalidator) {
+        if (value.maxLength != null)
+          res.add(Validators.maxLength(value.maxLength!.toInt()));
+        if (value.minLength != null)
+          res.add(Validators.minLength(value.minLength!.toInt()));
+        if (value.allowDigits != null) {
+          res.add(Validators.delegate((control) {
+            if (control.value is String &&
+                !value.allowDigits! &&
+                (control.value as String).contains('.')) {
+              return {'allowDigits': value.allowDigits};
+            }
+            return null;
+          }));
+        }
+      }
 
-          final formValues = rawParent is Map
-              ? rawParent.map<String, dynamic>(
-                  (k, v) => MapEntry(k.toString(), v),
-                )
-              : <String, dynamic>{};
+      if (value is s.Answercountvalidator) {
+        if (value.maxCount != null)
+          res.add(Validators.maxLength(value.maxCount!.toInt()));
+        if (value.minCount != null)
+          res.add(Validators.minLength(value.minCount!.toInt()));
+      }
 
-          final ok = evaluateExpression(expr, formValues);
+      if (value is s.Regexvalidator && value.regex != null) {
+        res.add(Validators.pattern(value.regex!));
+      }
 
-          print(
-              'ExpressionValidator → field: ${question.title} expr:$expr:$expr result:$ok form:$formValues');
+      if (value is s.Emailvalidator) {
+        res.add(Validators.email);
+      }
 
-          if (!ok) {
-            return {'expression': message};
-          }
+      // Expression validator
+      if (value is s.Expressionvalidator) {
+        final expr = value.expression;
 
-          return null;
-        }));
+        if (expr != null && expr.isNotEmpty) {
+          res.add(Validators.delegate((control) {
+            // Safe conversion of parent form values
+            final raw = control.parent?.value;
+
+            final formValues = raw is Map
+                ? raw.map<String, dynamic>((k, v) => MapEntry(k.toString(), v))
+                : <String, dynamic>{};
+
+            final valid = evaluateExpression(expr, formValues);
+
+            if (!valid) {
+              return {
+                'expression': value.text ?? 'Expression validation failed'
+              };
+            }
+
+            return null;
+          }));
+        }
       }
     }
   }
