@@ -173,24 +173,12 @@ class SurveyElementFactory {
   AbstractControl? resolveFormControl(
       BuildContext context, s.Elementbase element,
       {Object? value, List<Validator> validators = const []}) {
-    // 1. Clone the validators list so we can modify it
-    final effectiveValidators = [...validators];
-
-    // 2. Add required validator automatically if element.isRequired is true
-    if ((element is s.Question) && element.isRequired == true) {
-      effectiveValidators.add(Validators.required);
-    }
-
-    // 3. Call the specific builder if exists
     if (_formControlMap.containsKey(element.type)) {
       final c = _formControlMap[element.type];
-      return c?.call(context, element,
-          validators: effectiveValidators, value: value);
+      return c?.call(context, element, validators: validators, value: value);
     }
-
-    // 4. fallback to generic FormControl<Object>
+    //fallback to FormControl<Object>
     return FormControl<Object>(
-        validators: effectiveValidators,
-        value: getDefaultValue(element, value));
+        validators: validators, value: getDefaultValue(element, value));
   }
 }
