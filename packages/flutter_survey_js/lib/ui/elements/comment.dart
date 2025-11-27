@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
+import 'package:flutter_survey_js/utils.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:flutter_survey_js/utils.dart';
-Widget commentBuilder(BuildContext context, s.Elementbase element, {ElementConfiguration? configuration}) {
+
+Widget commentBuilder(BuildContext context, s.Elementbase element,
+    {ElementConfiguration? configuration}) {
   return ReactiveTextField(
     keyboardType: TextInputType.multiline,
     maxLines: null,
     formControlName: element.name!,
+    readOnly: (element as s.Comment).readOnly ?? false,
     decoration: InputDecoration(
       fillColor: Colors.white,
       border: const OutlineInputBorder(
