@@ -204,11 +204,13 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   /// Submits: when the form is valid we call the SUBMIT outcome callback if present.
   bool submit() {
-    if (rootNode == null) return false;
+    if (!_validateCurrentPage()) return false;
+
     if (formGroup.valid) {
       final data = widget.removingEmptyFields
           ? removeEmptyField(formGroup.value)
           : formGroup.value;
+
       _callOutcomeCallback('SUBMIT', data);
       return true;
     } else {
@@ -235,9 +237,13 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   /// Generic "trigger outcome" - looks up callback by key (case-insensitive)
   void triggerOutcome(String outcomeType) {
+    // Validate before triggering outcome
+    if (!_validateCurrentPage()) return;
+
     final data = widget.removingEmptyFields
         ? removeEmptyField(formGroup.value)
         : formGroup.value;
+
     _callOutcomeCallback(outcomeType, data);
   }
 
@@ -295,6 +301,9 @@ class SurveyWidgetState extends State<SurveyWidget> {
 
   /// Next page or call "back" (the original code used nextPageOrBack semantics).
   bool nextPageOrBack() {
+    // Prevent navigation if current page has invalid required fields
+    if (!_validateCurrentPage()) return false;
+
     final bool finished = _currentPage >= pageCount - 1;
     if (!finished) {
       toPage(_currentPage + 1);
@@ -302,6 +311,44 @@ class SurveyWidgetState extends State<SurveyWidget> {
       back();
     }
     return finished;
+  }
+
+  /// Validate current page (block navigation if required fields not filled)
+  bool _validateCurrentPage() {
+    if (rootNode == null) return true;
+
+    // Show validation messages
+    formGroup.markAllAsTouched();
+    formGroup.updateValueAndValidity();
+
+    /*final page = widget.survey.pages![_currentPage];
+    bool hasError = false;
+
+    // Recursive function to validate node and its children
+    void checkNode(ElementNode node) {
+      if (node.control != null && !node.control!.valid) {
+        hasError = true;
+      }
+      for (var child in node.children) {
+        checkNode(child);
+      }
+    }
+
+    // Check only nodes that belong to current page
+    for (var element in page.elements?.toList(growable: true) ?? []) {
+      final node = rootNode!.findByElement(rawElement: element);
+      if (node != null) {
+        checkNode(node);
+      }
+    }
+
+    if (hasError) {
+      setState(() {});
+      widget.onErrors?.call(formGroup.errors);
+      return false;
+    }*/
+
+    return true;
   }
 }
 
