@@ -72,6 +72,7 @@ class SurveyElementFactory {
     register<s.Boolean>(booleanBuilder,
         control: (context, element, {validators = const [], value}) =>
             FormControl<bool>(
+                disabled: (element as s.Boolean).readOnly == true,
                 value: (element as s.Boolean).defaultValue.tryCastToBool() ??
                     value.tryCastToBool(),
                 validators: validators));
