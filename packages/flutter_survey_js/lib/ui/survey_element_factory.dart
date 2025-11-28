@@ -64,6 +64,7 @@ class SurveyElementFactory {
         //Ranking returns array of single value( string, boolean etc.)
         control: (context, element, {validators = const [], value}) =>
             FormControl<List<dynamic>>(
+                disabled: (element as s.Ranking).readOnly == true,
                 value: (element as s.Ranking).defaultValue.tryCastToListObj() ??
                     value.tryCastToList() ??
                     [],
