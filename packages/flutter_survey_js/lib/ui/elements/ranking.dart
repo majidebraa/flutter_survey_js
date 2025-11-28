@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/ui/elements/selectbase.dart';
 import 'package:flutter_survey_js/ui/reactive/reactive_reorderable_list.dart';
 import 'package:flutter_survey_js/ui/survey_configuration.dart';
+import 'package:flutter_survey_js/utils.dart';
 import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:flutter_survey_js/utils.dart';
 
 Widget rankingBuilder(BuildContext context, s.Elementbase element,
     {ElementConfiguration? configuration}) {
@@ -17,6 +17,7 @@ class RankingWidget extends StatefulWidget {
   final s.Ranking element;
 
   const RankingWidget({Key? key, required this.element}) : super(key: key);
+
   @override
   State<StatefulWidget> createState() => RankingWidgetState();
 }
@@ -55,14 +56,30 @@ class RankingElement extends StatelessWidget {
         element.choices?.map((p0) => p0.castToItemvalue()).toList() ?? [];
     final accessor = ItemValueAccessor(choices);
 
-    return ReactiveReorderableList<dynamic, s.Itemvalue>(
-      formControlName: formControlName,
-      valueAccessor: accessor,
-      itemBuilder: (item) {
-        return Text(item.text?.getLocalizedText(context) ??
-            item.value?.toString() ??
-            '');
-      },
+    final isReadOnly = element.readOnly == true;
+
+    return AbsorbPointer(
+      absorbing: isReadOnly, // <- disables drag but keeps handles visible
+      child: Opacity(
+        opacity: isReadOnly ? 0.6 : 1.0, // optional visual hint
+        child: ReactiveReorderableList<dynamic, s.Itemvalue>(
+          formControlName: formControlName,
+          valueAccessor: accessor,
+          itemBuilder: (item) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.text?.getLocalizedText(context) ??
+                        item.value?.toString() ??
+                        '',
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
