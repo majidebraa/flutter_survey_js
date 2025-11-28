@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_survey_js/ui/elements/selectbase.dart';
-import 'package:flutter_survey_js/ui/survey_configuration.dart';
-import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:flutter_survey_js/ui/reactive/reactive_group_button.dart';
+import 'package:flutter_survey_js/ui/survey_configuration.dart';
+import 'package:flutter_survey_js/utils.dart';
+import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
 import 'package:group_button/group_button.dart';
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:flutter_survey_js/utils.dart';
+
 import '../../generated/l10n.dart';
 
 Widget radioGroupBuilder(BuildContext context, s.Elementbase element,
@@ -51,6 +52,7 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
   }
 
   late SelectbaseController selectbaseController;
+
   @override
   void initState() {
     super.initState();
@@ -77,20 +79,19 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     var e = widget.element;
 
+    final bool readOnly = widget.element.readOnly == true;
+
     final elementItems = <ReactiveGroupButtonItem>[
-      ...choices
-          .map(
-            (e) => ReactiveGroupButtonItem(
-              value: e.value?.value,
-              title: e.text?.getLocalizedText(context) ??
-                  e.value?.toString() ??
-                  '',
-            ),
-          )
-          .toList(growable: false),
+      ...choices.map(
+        (e) => ReactiveGroupButtonItem(
+          value: e.value?.value,
+          title: e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+        ),
+      ),
       if (widget.element.showNoneItem == true)
         ReactiveGroupButtonItem(
           value: noneValue,
@@ -104,39 +105,46 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
               : selectbaseController.otherValue,
           title: e.otherText?.getLocalizedText(context) ??
               S.of(context).otherItemText,
-        )
+        ),
     ];
+
     return SelectbaseWidget(
-        controller: selectbaseController,
-        otherValueChanged: (value) {
-          if (!selectbaseController.storeOtherAsComment) {
-            getCurrentControl().value = value;
-          } else {
-            getCurrentControl().value = otherValue;
-          }
-        },
-        child: ReactiveGroupButton(
-            options: const GroupButtonOptions(spacing: 0, runSpacing: 0),
-            isRadio: true,
-            formControlName: e.name!,
-            buttons: elementItems,
-            onChanged: (control) {
-              if (widget.element.showOtherItem ?? false) {
-                if (selectbaseController.storeOtherAsComment) {
-                  selectbaseController
-                      .setShowOther(control.value == otherValue);
+      controller: selectbaseController,
+      otherValueChanged: (value) {
+        if (!selectbaseController.storeOtherAsComment) {
+          getCurrentControl().value = value;
+        } else {
+          getCurrentControl().value = otherValue;
+        }
+      },
+      child: ReactiveGroupButton(
+        options: const GroupButtonOptions(spacing: 0, runSpacing: 0),
+        isRadio: true,
+        formControlName: e.name!,
+        buttons: elementItems,
+        // 🔒 disable widget
+        onChanged: readOnly // 🔒 block interaction
+            ? null
+            : (control) {
+                if (widget.element.showOtherItem ?? false) {
+                  if (selectbaseController.storeOtherAsComment) {
+                    selectbaseController
+                        .setShowOther(control.value == otherValue);
+                  } else {
+                    selectbaseController
+                        .setShowOther(isOtherValue(control.value));
+                  }
                 } else {
-                  selectbaseController
-                      .setShowOther(isOtherValue(control.value));
-                }
-              } else {
-                selectbaseController.setShowOther(false);
-              }
-              if (widget.element.showNoneItem ?? false) {
-                if (control.value == noneValue) {
                   selectbaseController.setShowOther(false);
                 }
-              }
-            }));
+
+                if (widget.element.showNoneItem ?? false) {
+                  if (control.value == noneValue) {
+                    selectbaseController.setShowOther(false);
+                  }
+                }
+              },
+      ),
+    );
   }
 }
