@@ -107,33 +107,28 @@ Widget textBuilder(BuildContext context, s.Elementbase element,
 AbstractControl textControlBuilder(BuildContext context, s.Elementbase element,
     {validators = const <ValidatorFunction>[], Object? value}) {
   final e = element as s.Text;
-  final bool isReadOnly = e.readOnly == true;
-
   if (e.inputType == s.TextInputType.date ||
       e.inputType == s.TextInputType.datetimeLocal) {
     return FormControl<String>(
-      validators: validators,
-      value: e.defaultValue.tryCastToString() ?? value.tryCastToString(),
-      disabled: isReadOnly, // <-- disable control if read-only
-    );
+        validators: validators,
+        value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
   }
-
-  if (e.inputType == s.TextInputType.color ||
-      e.inputType == s.TextInputType.email ||
-      e.inputType == s.TextInputType.number) {
-    return FormControl(
-      validators: e.inputType == s.TextInputType.email
-          ? [...validators, Validators.email]
-          : e.inputType == s.TextInputType.number
-              ? [...validators, NullableNumberValidator()]
-              : validators,
-      value: e.defaultValue ?? value, // keep original default/value logic
-      disabled: isReadOnly, // <-- disable if read-only
-    );
+  if (e.inputType == s.TextInputType.color) {
+    return FormControl<String>(
+        validators: validators,
+        value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
   }
-
+  if (e.inputType == s.TextInputType.email) {
+    return FormControl<String>(
+        validators: [...validators, Validators.email],
+        value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
+  }
+  if (e.inputType == s.TextInputType.number) {
+    return FormControl<num>(
+        validators: [...validators, NullableNumberValidator()],
+        value: e.defaultValue.tryCastToNum() ?? value.tryCastToNum());
+  }
   return FormControl<String>(
       validators: validators,
-      value: e.defaultValue.tryCastToString() ?? value.tryCastToString(),
-      disabled: isReadOnly);
+      value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
 }
