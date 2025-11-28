@@ -79,6 +79,7 @@ class SurveyElementFactory {
     register<s.Rating>(ratingBuilder,
         control: (context, element, {validators = const [], value}) =>
             FormControl<int>(
+                disabled: (element as s.Rating).readOnly == true,
                 validators: validators,
                 value: (element as s.Rating).defaultValue.tryCastToInt() ??
                     value.tryCastToInt()));
