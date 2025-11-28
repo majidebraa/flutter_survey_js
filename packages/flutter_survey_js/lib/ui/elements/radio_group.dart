@@ -65,7 +65,7 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
       }
 
       if (isOtherValue(value)) {
-        //current value outside of choices
+        // current value outside of choices
         if (selectbaseController.storeOtherAsComment) {
           control.value = otherValue;
           if (value?.toString() != otherValue) {
@@ -79,17 +79,18 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
-    var e = widget.element;
+    final e = widget.element;
 
+    // Use element.readOnly only to avoid referencing a SurveyConfiguration API that may not exist.
     final bool readOnly = widget.element.readOnly == true;
 
+    // Build button items (values + localized titles)
     final elementItems = <ReactiveGroupButtonItem>[
       ...choices.map(
-        (e) => ReactiveGroupButtonItem(
-          value: e.value?.value,
-          title: e.text?.getLocalizedText(context) ?? e.value?.toString() ?? '',
+        (c) => ReactiveGroupButtonItem(
+          value: c.value?.value,
+          title: c.text?.getLocalizedText(context) ?? c.value?.toString() ?? '',
         ),
       ),
       if (widget.element.showNoneItem == true)
@@ -108,6 +109,37 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
         ),
     ];
 
+    Widget groupButton = ReactiveGroupButton(
+      options: const GroupButtonOptions(spacing: 0, runSpacing: 0),
+      isRadio: true,
+      formControlName: e.name!,
+      buttons: elementItems,
+      // When readOnly is true we block changes by providing null to onChanged.
+      onChanged: readOnly
+          ? null
+          : (control) {
+              // preserve previous other/none logic
+              if (widget.element.showOtherItem ?? false) {
+                if (selectbaseController.storeOtherAsComment) {
+                  selectbaseController
+                      .setShowOther(control.value == otherValue);
+                } else {
+                  selectbaseController
+                      .setShowOther(isOtherValue(control.value));
+                }
+              } else {
+                selectbaseController.setShowOther(false);
+              }
+
+              if (widget.element.showNoneItem ?? false) {
+                if (control.value == noneValue) {
+                  selectbaseController.setShowOther(false);
+                }
+              }
+            },
+    );
+
+    // Wrap to block gestures reliably and show a subtle visual hint.
     return SelectbaseWidget(
       controller: selectbaseController,
       otherValueChanged: (value) {
@@ -117,32 +149,12 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
           getCurrentControl().value = otherValue;
         }
       },
-      child: ReactiveGroupButton(
-        options: const GroupButtonOptions(spacing: 0, runSpacing: 0),
-        isRadio: true,
-        formControlName: e.name!,
-        buttons: elementItems,
-        onChanged: readOnly
-            ? null
-            : (control) {
-                if (widget.element.showOtherItem ?? false) {
-                  if (selectbaseController.storeOtherAsComment) {
-                    selectbaseController
-                        .setShowOther(control.value == otherValue);
-                  } else {
-                    selectbaseController
-                        .setShowOther(isOtherValue(control.value));
-                  }
-                } else {
-                  selectbaseController.setShowOther(false);
-                }
-
-                if (widget.element.showNoneItem ?? false) {
-                  if (control.value == noneValue) {
-                    selectbaseController.setShowOther(false);
-                  }
-                }
-              },
+      child: AbsorbPointer(
+        absorbing: readOnly, // prevents any interaction when readOnly is true
+        child: Opacity(
+          opacity: readOnly ? 0.8 : 1.0, // subtle visual cue
+          child: groupButton,
+        ),
       ),
     );
   }
