@@ -44,12 +44,12 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
     Future.microtask(() {
       final control = getCurrentControl();
       final value = control.value;
-
       if (selectbaseController.storeOtherAsComment) {
         selectbaseController.setShowOther(value == otherValue);
       }
 
       if (isOtherValue(value)) {
+        //current value outside of choices
         if (selectbaseController.storeOtherAsComment) {
           control.value = otherValue;
           if (value?.toString() != otherValue) {
@@ -98,8 +98,6 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
   Widget build(BuildContext context) {
     var e = widget.dropdown;
 
-    final bool readOnly = widget.dropdown.readOnly == true;
-
     final dropdownItems = <DropdownMenuItem<dynamic>>[
       ...choices
           .map(
@@ -115,27 +113,25 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           .toList(growable: false),
       if (widget.dropdown.showNoneItem == true)
         DropdownMenuItem(
-          alignment: AlignmentDirectional.centerEnd,
-          value: noneValue,
-          child: Text(
-            e.noneText?.getLocalizedText(context) ?? S.of(context).noneItemText,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
+            alignment: AlignmentDirectional.centerEnd,
+            value: noneValue,
+            child: Text(
+              e.noneText?.getLocalizedText(context) ??
+                  S.of(context).noneItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
+            )),
       if (widget.dropdown.showOtherItem == true)
         DropdownMenuItem(
-          alignment: AlignmentDirectional.centerEnd,
-          value: selectbaseController.storeOtherAsComment
-              ? otherValue
-              : selectbaseController.otherValue,
-          child: Text(
-            e.otherText?.getLocalizedText(context) ??
-                S.of(context).otherItemText,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
+            alignment: AlignmentDirectional.centerEnd,
+            value: selectbaseController.storeOtherAsComment
+                ? otherValue
+                : selectbaseController.otherValue,
+            child: Text(
+              e.otherText?.getLocalizedText(context) ??
+                  S.of(context).otherItemText,
+              style: Theme.of(context).textTheme.bodyMedium,
+            )),
     ];
-
     return SelectbaseWidget(
       controller: selectbaseController,
       otherValueChanged: (value) {
@@ -145,40 +141,28 @@ class _DropdownWidgetState extends State<_DropdownWidget> {
           getCurrentControl().value = otherValue;
         }
       },
-      child: AbsorbPointer(
-        absorbing: readOnly,
-        child: Opacity(
-          opacity: readOnly ? 0.85 : 1.0,
-          child: ReactiveDropdownField<dynamic>(
-            formControlName: e.name!,
-            hint: Text(
-              e.placeholder?.getLocalizedText(context) ??
-                  S.of(context).placeholder,
-            ),
-            onChanged: readOnly
-                ? null
-                : (control) {
-                    if (widget.dropdown.showOtherItem ?? false) {
-                      if (selectbaseController.storeOtherAsComment) {
-                        selectbaseController
-                            .setShowOther(control.value == otherValue);
-                      } else {
-                        selectbaseController
-                            .setShowOther(isOtherValue(control.value));
-                      }
-                    } else {
-                      selectbaseController.setShowOther(false);
-                    }
-                    if (widget.dropdown.showNoneItem ?? false) {
-                      if (control.value == noneValue) {
-                        selectbaseController.setShowOther(false);
-                      }
-                    }
-                  },
-            items: dropdownItems,
-            alignment: AlignmentDirectional.centerEnd,
-          ),
-        ),
+      child: ReactiveDropdownField<dynamic>(
+        formControlName: e.name!,
+        hint: Text(e.placeholder?.getLocalizedText(context) ??
+            S.of(context).placeholder),
+        onChanged: (control) {
+          if (widget.dropdown.showOtherItem ?? false) {
+            if (selectbaseController.storeOtherAsComment) {
+              selectbaseController.setShowOther(control.value == otherValue);
+            } else {
+              selectbaseController.setShowOther(isOtherValue(control.value));
+            }
+          } else {
+            selectbaseController.setShowOther(false);
+          }
+          if (widget.dropdown.showNoneItem ?? false) {
+            if (control.value == noneValue) {
+              selectbaseController.setShowOther(false);
+            }
+          }
+        },
+        items: dropdownItems,
+        alignment: AlignmentDirectional.centerEnd,
       ),
     );
   }

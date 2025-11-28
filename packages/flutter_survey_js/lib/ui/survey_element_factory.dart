@@ -123,6 +123,7 @@ class SurveyElementFactory {
         control: (context, element, {validators = const [], value}) =>
             FormControl<Object>(
                 validators: validators,
+                disabled: (element as s.Dropdown).readOnly == true,
                 value: (element as s.Dropdown).defaultValue?.value ?? value));
     register<s.Paneldynamic>(panelDynamicBuilder);
     register<s.Panel>(panelBuilder);
