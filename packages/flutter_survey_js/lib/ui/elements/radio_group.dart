@@ -122,8 +122,7 @@ class _RadioGroupWidgetState extends State<_RadioGroupWidget> {
         isRadio: true,
         formControlName: e.name!,
         buttons: elementItems,
-        // 🔒 disable widget
-        onChanged: readOnly // 🔒 block interaction
+        onChanged: readOnly
             ? null
             : (control) {
                 if (widget.element.showOtherItem ?? false) {
