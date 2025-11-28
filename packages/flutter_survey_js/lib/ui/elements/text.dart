@@ -110,25 +110,30 @@ AbstractControl textControlBuilder(BuildContext context, s.Elementbase element,
   if (e.inputType == s.TextInputType.date ||
       e.inputType == s.TextInputType.datetimeLocal) {
     return FormControl<String>(
+        disabled: element.readOnly ?? false,
         validators: validators,
         value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
   }
   if (e.inputType == s.TextInputType.color) {
     return FormControl<String>(
+        disabled: element.readOnly ?? false,
         validators: validators,
         value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
   }
   if (e.inputType == s.TextInputType.email) {
     return FormControl<String>(
+        disabled: element.readOnly ?? false,
         validators: [...validators, Validators.email],
         value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
   }
   if (e.inputType == s.TextInputType.number) {
     return FormControl<num>(
+        disabled: element.readOnly ?? false,
         validators: [...validators, NullableNumberValidator()],
         value: e.defaultValue.tryCastToNum() ?? value.tryCastToNum());
   }
   return FormControl<String>(
+      disabled: element.readOnly ?? false,
       validators: validators,
       value: e.defaultValue.tryCastToString() ?? value.tryCastToString());
 }
