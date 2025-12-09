@@ -15,7 +15,14 @@ class PanelTitle extends StatelessWidget {
         // SurveyWidget.of(context).formGroup.vali;
       },
       child: ListTile(
-        title: Text(panel.title?.getLocalizedText(context) ?? panel.name ?? ''),
+        title: Text(panel.title?.getLocalizedText(context) ?? panel.name ?? '',
+          style: TextStyle(
+          color: Theme.of(context).colorScheme.secondary,
+          fontSize: 16,
+
+
+        ),
+        ),
         subtitle: panel.description?.getLocalizedText(context) != null ? Text(panel.description!.getLocalizedText(context)!) : null,
       ),
     );
