@@ -121,7 +121,7 @@ class SurveyPageWidgetState extends State<SurveyPageWidget> {
                 if (widget.page.title != null ||
                     widget.page.description != null)
                   Padding(
-                    padding: const EdgeInsets.all(2.0),
+                    padding: const EdgeInsets.all(0.0),
                     child: PanelTitle(
                       panel: widget.page,
                       onTimeout: () {
