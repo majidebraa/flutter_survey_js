@@ -139,7 +139,7 @@ extension SurveyShowQuestionNumbersExtension on SurveyShowQuestionNumbers {
     return (this.anyOf.values[
                 this.anyOf.types.indexOf(SurveyShowQuestionNumbersAnyOf)]
             as SurveyShowQuestionNumbersAnyOf) ==
-        SurveyShowQuestionNumbersAnyOf.off;
+        SurveyShowQuestionNumbersAnyOf.on;
   }
 
   bool get isOnPage {
