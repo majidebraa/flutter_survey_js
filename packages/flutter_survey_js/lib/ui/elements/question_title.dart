@@ -27,7 +27,7 @@ class QuestionTitle extends StatelessWidget {
       }
     }
 
-    titleTextStyle() => Theme.of(context).textTheme.titleLarge;
+    titleTextStyle() => Theme.of(context).textTheme.titleMedium;
 
     title() {
       final survey = SurveyProvider.of(context);
@@ -61,14 +61,14 @@ class QuestionTitle extends StatelessWidget {
               if (questionNumber.isNotEmpty)
                 Text(
                   questionNumber,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               const SizedBox(width: 4),
               // Main title wraps inside Expanded
               Expanded(
                 child: Text(
                   q.title?.getLocalizedText(context) ?? q.name ?? "",
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleMedium,
                   softWrap: true,
                 ),
               ),
