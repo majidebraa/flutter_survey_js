@@ -1,25 +1,38 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_survey_js/ui/survey_configuration.dart';
-import 'package:flutter_survey_js/utils.dart';
-import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
-import 'package:reactive_forms/reactive_forms.dart';
+Widget commentBuilder(
+    BuildContext context,
+    s.Elementbase element, {
+      ElementConfiguration? configuration,
+    }) {
+  final comment = element as s.Comment;
+  final bool isReadOnly = comment.readOnly ?? false;
 
-Widget commentBuilder(BuildContext context, s.Elementbase element,
-    {ElementConfiguration? configuration}) {
-  return ReactiveTextField(
-    keyboardType: TextInputType.multiline,
-    maxLines: null,
-    formControlName: element.name!,
-    readOnly: (element as s.Comment).readOnly ?? false,
-    decoration: InputDecoration(
-      fillColor: Colors.white,
-      border: const OutlineInputBorder(
+  return Opacity(
+    opacity: isReadOnly ? 0.6 : 1.0, // 👈 visual feedback
+    child: ReactiveTextField(
+      keyboardType: TextInputType.multiline,
+      maxLines: null,
+      formControlName: element.name!,
+      readOnly: isReadOnly,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: isReadOnly
+            ? Colors.grey.shade200 // 👈 readonly background
+            : Colors.white,
+        border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          borderSide: BorderSide(color: Colors.blue)),
-      filled: true,
-      contentPadding:
-          const EdgeInsets.only(bottom: 10.0, left: 10.0, right: 10.0),
-      hintText: (element as s.Comment).placeholder?.getLocalizedText(context),
+          borderSide: BorderSide(color: Colors.blue),
+        ),
+        contentPadding: const EdgeInsets.only(
+          bottom: 10.0,
+          left: 10.0,
+          right: 10.0,
+        ),
+        hintText: comment.placeholder?.getLocalizedText(context),
+      ),
     ),
-  ).wrapQuestionTitle(context, element, configuration: configuration);
+  ).wrapQuestionTitle(
+    context,
+    element,
+    configuration: configuration,
+  );
 }
