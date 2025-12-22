@@ -1,3 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_survey_js/ui/survey_configuration.dart';
+import 'package:flutter_survey_js/utils.dart';
+import 'package:flutter_survey_js_model/flutter_survey_js_model.dart' as s;
+import 'package:reactive_forms/reactive_forms.dart';
+
 Widget commentBuilder(
     BuildContext context,
     s.Elementbase element, {
@@ -7,7 +13,7 @@ Widget commentBuilder(
   final bool isReadOnly = comment.readOnly ?? false;
 
   return Opacity(
-    opacity: isReadOnly ? 0.6 : 1.0, // 👈 visual feedback
+    opacity: isReadOnly ? 0.6 : 1.0, //  visual feedback
     child: ReactiveTextField(
       keyboardType: TextInputType.multiline,
       maxLines: null,
@@ -16,7 +22,7 @@ Widget commentBuilder(
       decoration: InputDecoration(
         filled: true,
         fillColor: isReadOnly
-            ? Colors.grey.shade200 // 👈 readonly background
+            ? Colors.grey.shade200 //  readonly background
             : Colors.white,
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
@@ -36,3 +42,4 @@ Widget commentBuilder(
     configuration: configuration,
   );
 }
+
